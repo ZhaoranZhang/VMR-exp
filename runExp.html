@@ -2,14 +2,23 @@
 <html>
     <head>
         <title>VMR-exp</title>
-        <script src="jspsych.js"></script>
+        <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
+
+        <!-- USING GITHUB FILES -->
+        <script src=https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych.js></script>
+        <script src=https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych-html-button-response.js></script>
+        <script src=https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych-vmr.js></script>
+        <link href="https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych_myStyle.css" rel="stylesheet" type="text/css"></link>
+
+        <!-- USING LOCAL FILES -->
+        <!-- <script src="jspsych.js"></script>
         <script src="jspsych-html-button-response.js"></script>
         <script src="jspsych-vmr.js"></script>
-        <link href="jspsych_myStyle.css" rel="stylesheet" type="text/css"></link>
+        <link href="jspsych_myStyle.css" rel="stylesheet" type="text/css"></link> -->
+
     </head>
 <body>
-
-<!-- EVAN TESTING  -->
+  
 
 <script>
 
@@ -21,6 +30,7 @@
 var timeline = [];
 
 
+////////////////////////////////////////////////
 /* create instruction objects */
 var instructions1 = {
     type: 'html-button-response',
@@ -30,7 +40,9 @@ var instructions1 = {
     "<br/>" + 
     "<p>Let's start with some practice.<p>" +
     "<br/>",
-    choices: ['<h2>Start Practice</h2>']
+    choices: ['<h2>Start Practice</h2>'],
+    on_start: function() {$('body').css('cursor', 'auto')}, // show cursor before button click
+    on_finish: function() {$('body').css('cursor', 'none')} // hide cursor after button click
 };
 
 var instructions2 = {
@@ -39,10 +51,14 @@ var instructions2 = {
     "<br/>" +
     "<p>Click the button to start the experiment.<p>" +
     "<br/>",
-    choices: ['<h2>Start Experiment</h2>']
-};
+    choices: ['<h2>Start Experiment</h2>'],
+    on_start: function() {$('body').css('cursor', 'auto')}, // show cursor before button click
+    on_finish: function() {$('body').css('cursor', 'none')} // hide cursor after button click
+  };
 
 
+
+////////////////////////////////////////////////
 /* create trial objects */
 // basline trials (no perturbation)
 var trial_baseline = {
@@ -65,6 +81,10 @@ var trial_pert = {
   perturbation_angle: -15
 }
 
+
+
+
+////////////////////////////////////////////////
 /* create block objects */
 var practice_block = {
   timeline: [trial_baseline],
@@ -86,6 +106,7 @@ var adaptation_block = {
 
 
 
+////////////////////////////////////////////////
 // now push everything to timeline
 timeline.push(instructions1);
 timeline.push(practice_block);
