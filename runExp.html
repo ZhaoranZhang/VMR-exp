@@ -8,12 +8,14 @@
         <script src=https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych.js></script>
         <script src=https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych-html-button-response.js></script>
         <script src=https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych-vmr.js></script>
+        <script src=https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych-fullscreen.js></script>
         <!--<link href="https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych_myStyle.css" rel="stylesheet" type="text/css"></link>-->
 
         <!-- USING LOCAL FILES -->
         <!-- <script src="jspsych.js"></script>
         <script src="jspsych-html-button-response.js"></script>
         <script src="jspsych-vmr.js"></script>
+        <script src="jspsych-fullscreen.js"></script>
         <link href="jspsych_myStyle.css" rel="stylesheet" type="text/css"></link> -->
 
     </head>
@@ -40,7 +42,12 @@ document.getElementsByTagName('HEAD')[0].appendChild(link);  // Get HTML head el
 /* create empty timeline */
 var timeline = [];
 
-
+// run in full-screen mode
+timeline.push({
+  type: 'fullscreen',
+  fullscreen_mode: true
+});
+    
 ////////////////////////////////////////////////
 /* create instruction objects */
 var instructions1 = {
