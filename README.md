@@ -2,4 +2,4 @@
 
 Create executable link for runExp.html using: https://raw.githack.com
 
-(**Important:** A new link needs to be created after new changes have been committed to the main code runExp.html)
+(**Important:** Use development URL to make sure it uses latest version! / Use production URL to use stable version)
