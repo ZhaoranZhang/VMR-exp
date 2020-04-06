@@ -8,7 +8,7 @@
         <script src=https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych.js></script>
         <script src=https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych-html-button-response.js></script>
         <script src=https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych-vmr.js></script>
-        <link href="https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych_myStyle.css" rel="stylesheet" type="text/css"></link>
+        <!--<link href="https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych_myStyle.css" rel="stylesheet" type="text/css"></link>-->
 
         <!-- USING LOCAL FILES -->
         <!-- <script src="jspsych.js"></script>
@@ -19,8 +19,20 @@
     </head>
 <body>
   
+<p>Enter the code you were given:</p>
+<input type='text' name='expCode' id='code'>
+<button onclick='sendData();'>Submit HIT</button>
 
 <script>
+
+
+// Add style sheet (somehow doesn't work if doing it in head...)
+var link = document.createElement('link');  // Create new link Element 
+link.rel = 'stylesheet';  // set the attributes for link element 
+link.type = 'text/css'; 
+link.href = 'https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych_myStyle.css';  // load my style sheet
+document.getElementsByTagName('HEAD')[0].appendChild(link);  // Get HTML head element to append link element to it  
+
 
 //---------------------------------------------------------------
 //----------- Create structure for experiment: ------------------
@@ -94,12 +106,12 @@ var practice_block = {
 
 var baseline_block = {
   timeline: [trial_baseline],
-  repetitions: 10
+  repetitions: 2//10
 }
 
 var adaptation_block = {
   timeline: [trial_pert],
-  repetitions: 30
+  repetitions: 5//30
 }
 //randomize_order: false
 
@@ -120,8 +132,10 @@ timeline.push(baseline_block);
 jsPsych.init({
   timeline: timeline,
   on_finish: function(){ 
-      jsPsych.data.displayData(); // 'csv'
-      var all_data = jsPsych.data.get();}, // create new variable that contains all data from experiment
+    jsPsych.data.displayData(); // 'csv'
+    var all_data = jsPsych.data.get(); // create new variable that contains all data from experiment
+    jsPsych.turk.submitToTurk({ code: document.getElementById('code').value });
+    },
   default_iti: 750
 });
 
