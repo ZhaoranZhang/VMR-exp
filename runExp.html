@@ -19,9 +19,8 @@
     </head>
 <body>
   
-<p>Enter the code you were given:</p>
-<input type='text' name='expCode' id='code'>
-<button onclick='sendData();'>Submit HIT</button>
+<input type='hidden' name='RT' id='RT'>
+<!-- <button onclick='sendData();'>Submit HIT</button> -->
 
 <script>
 
@@ -132,8 +131,8 @@ timeline.push(baseline_block);
 /* start the experiment */
 jsPsych.init({
   timeline: timeline,
-  on_finish: function sendData() { // sending data at end of experiment
-      jsPsych.turk.submitToTurk({ code: document.getElementById('code').value});
+  on_finish: function { //
+      jsPsych.turk.submitToTurk();
       //jsPsych.data.displayData(); // 'csv'
       //var all_data = jsPsych.data.get(); // create new variable that contains all data from experiment
       },
