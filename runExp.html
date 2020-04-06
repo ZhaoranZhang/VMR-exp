@@ -128,14 +128,15 @@ timeline.push(adaptation_block);
 timeline.push(baseline_block);
 
 
+    
 /* start the experiment */
 jsPsych.init({
   timeline: timeline,
-  on_finish: function(){ 
-    jsPsych.data.displayData(); // 'csv'
-    var all_data = jsPsych.data.get(); // create new variable that contains all data from experiment
-    jsPsych.turk.submitToTurk({ code: document.getElementById('code').value });
-    },
+  on_finish: function sendData() { // sending data at end of experiment
+      jsPsych.turk.submitToTurk({ code: document.getElementById('code').value});
+      //jsPsych.data.displayData(); // 'csv'
+      //var all_data = jsPsych.data.get(); // create new variable that contains all data from experiment
+      },
   default_iti: 750
 });
 
