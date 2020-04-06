@@ -19,7 +19,7 @@
     </head>
 <body>
   
-<input type='hidden' name='data' >
+<input type='hidden' name='data' id = 'data'> <!--this is just a placeholder -->
 
 
 <script>
@@ -121,10 +121,10 @@ var adaptation_block = {
 // now push everything to timeline
 timeline.push(instructions1);
 timeline.push(practice_block);
-timeline.push(instructions2);
-timeline.push(baseline_block);
-timeline.push(adaptation_block);
-timeline.push(baseline_block);
+// timeline.push(instructions2);
+// timeline.push(baseline_block);
+// timeline.push(adaptation_block);
+// timeline.push(baseline_block);
 
 
 /* start the experiment */
@@ -132,9 +132,9 @@ jsPsych.init({
   timeline: timeline,
   on_finish: function(){ 
     //jsPsych.data.displayData(); // 'csv'
-    //var all_data = jsPsych.data.get(); // create new variable that contains all data from experiment
+    var all_data = jsPsych.data.get(); // create new variable that contains all data from experiment
     $('#submitButton').show();
-    jsPsych.turk.submitToTurk();
+    jsPsych.turk.submitToTurk({ all_data });
     },
   default_iti: 750
 });
