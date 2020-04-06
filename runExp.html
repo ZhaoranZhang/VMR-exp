@@ -19,8 +19,8 @@
     </head>
 <body>
   
-<input type='hidden' name='RT' id='RT'>
-<!-- <button onclick='sendData();'>Submit HIT</button> -->
+<input type='hidden' name='data' >
+
 
 <script>
 
@@ -127,21 +127,17 @@ timeline.push(adaptation_block);
 timeline.push(baseline_block);
 
 
-    
 /* start the experiment */
 jsPsych.init({
   timeline: timeline,
-  on_finish: function { //
-      jsPsych.turk.submitToTurk();
-      //jsPsych.data.displayData(); // 'csv'
-      //var all_data = jsPsych.data.get(); // create new variable that contains all data from experiment
-      },
+  on_finish: function(){ 
+    //jsPsych.data.displayData(); // 'csv'
+    //var all_data = jsPsych.data.get(); // create new variable that contains all data from experiment
+    $('#submitButton').show();
+    jsPsych.turk.submitToTurk();
+    },
   default_iti: 750
 });
 
-//   
-
-
 
 </script>
-</html>
