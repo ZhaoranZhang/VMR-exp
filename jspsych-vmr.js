@@ -309,13 +309,14 @@ jsPsych.plugins["vmr"] = (function() {
       if (currentState<TRIALEND){ // If we're not done
         // Draw home position
         draw_circle(home.x,home.y,home.radius,home.colorHex,1);
-        // Draw cursor
-        draw_circle(cursor.xDisplayed,cursor.yDisplayed,cursor.radius,cursor.colorHex,1);
 
+        // Draw target position
         if (currentState>=GO){ // If we've waited at home long enough
-          // Draw target position
           draw_circle(target.x,target.y,target.radius,target.colorHex,1);
         }
+	      
+	// Draw cursor
+        draw_circle(cursor.xDisplayed,cursor.yDisplayed,cursor.radius,cursor.colorHex,1);
       }
 
 
