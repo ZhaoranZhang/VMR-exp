@@ -37,14 +37,14 @@ jsPsych.plugins["vmr"] = (function() {
       home_location: {
         pretty_name: "Home location",
         type: jsPsych.plugins.parameterType.INT, 
-        default: [window.innerWidth/2,.75*window.innerHeight],
+        default: [screen.availWidth/2,.75*screen.availHeight],
         array: true,
         description: "x and y coordinates of home position in pixels"
       },
       target_location: {
         pretty_name: "Target location",
         type: jsPsych.plugins.parameterType.INT, 
-        default: [window.innerWidth/2,.25*window.innerHeight],
+        default: [screen.availWidth/2,.25*screen.availHeight],
         array: true,
         description: "x and y coordinates of target in pixels"
       },
