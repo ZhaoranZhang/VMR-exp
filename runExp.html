@@ -145,9 +145,9 @@ jsPsych.init({
   timeline: timeline,
   on_finish: function(){ 
     //jsPsych.data.displayData(); // 'csv'
-    var all_data = jsPsych.data.get().csv(); // create new variable that contains all data from experiment
-    $('#submitButton').show();
-    jsPsych.turk.submitToTurk({ all_data });
+    //var all_data = jsPsych.data.get().csv(); // create new variable that contains all data from experiment
+    //$('#submitButton').show();
+    //jsPsych.turk.submitToTurk({ all_data });
     },
   default_iti: 750
 });
