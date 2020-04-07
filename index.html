@@ -23,8 +23,6 @@
          https://firebase.google.com/docs/web/setup#available-libraries -->
     <script src="/__/firebase/7.13.2/firebase-analytics.js"></script> <!-- Analytics -->
     <script src="/__/firebase/7.13.2/firebase-database.js"></script> <!-- Realtime Database -->
-    <!-- Initialize Firebase -->
-    <script src="/__/firebase/init.js"></script>
     <!-- Configure Realtime Database config -->
     <script>
       // Set the configuration for your app
@@ -34,11 +32,10 @@
         databaseURL: "https://motorlearn-cb21c.firebaseio.com/",
         //storageBucket: "bucket.appspot.com"
       };
-      firebase.initializeApp(config);
-    
-      // Get a reference to the database service (optional)
-      //var database = firebase.database();
     </script>
+    <!-- Initialize Firebase -->
+    <script src="/__/firebase/init.js"></script>
+    
   </head>
   
   <!--THE EXPERIMENT -->
@@ -118,7 +115,7 @@
     }
     //randomize_order: false
     
-    /* Create Firebase SAVE functions and object */
+    /* Create Firebase SAVE functions and block object */
     function makeid(){
       var text = "";
       var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -128,7 +125,11 @@
     }
   
     function saveToFirebase(code, filedata){
-      var ref = firebase.database().ref(code).set(filedata);
+      var ref = firebase.database().ref(code).set(filedata, function(error) {
+        if (error) {
+          console.log('ERROR: Failed to save data to firebase.');
+        }
+      });
     }
   
     var code = makeid();
@@ -139,6 +140,16 @@
       "<p>Click the button to receive validation code.<p>" + "<br/>",
       choices: ['<h2>Get Code</h2>'],
       on_start: function() {$('body').css('cursor', 'auto')}, // show cursor
+      on_finish: function() {
+        //saveToFirebase(code, jsPsych.data.get().json());
+        saveToFirebase(code, {message: "Here is some data."});
+      }
+    }
+    
+    var code_screen = {
+      type: 'html-button-response',
+      stimulus: '<h3>This is your code:</h3>' + "<br/>",
+      choices: ['<h2>9999999</h2>']
     }
     
     ////////////////////////////////////////////////
@@ -152,6 +163,7 @@
     timeline.push(adaptation_block);
     timeline.push(baseline_block);
     timeline.push(save_screen);
+    timeline.push(code_screen);
     
     ////////////////////////////////////////////////
     // 3. Start the experiment
