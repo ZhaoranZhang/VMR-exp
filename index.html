@@ -62,12 +62,15 @@
    
     var totTrials = trials.practice+trials.baseline+trials.adaptation+trials.afterEffect;  // compute total number of trials (needed for progress bar)
     
+
+
     /* Create SCREENMODE objects */
     var screenmode = {
       type: 'fullscreen',
       fullscreen_mode: true
     }
         
+            
     /* Create INSTRUCTIONS objects */
     var instructions1 = {
         type: 'html-button-response',
@@ -195,14 +198,53 @@
     ////////////////////////////////////////////////
     // 3. Start the experiment
     ////////////////////////////////////////////////
-    jsPsych.init({
-      timeline: timeline,
-      'show_progress_bar': true,
-      'auto_update_progress_bar': false,
-      'message_progress_bar': 'Completion Progress<br/>',
-      on_finish: function(){},
-      default_iti: 500
-    });
+    if (getBrowserInfo() !== 'Chrome' && getBrowserInfo() !== 'Firefox') {
+    	var wrong_browser = {
+    			type: 'html-button-response',
+    			stimulus: '<p>This experiment only has support for Google Chrome or Mozilla Firefox.</p>'
+    			+ '<p>Please reopen the experiment in one of these browsers.</p>',
+    			choices: ['Close window']}
+    	jsPsych.init({ 
+    	  timeline: [wrong_browser],
+    	  on_finish: function(){window.close();}
+    	});
+    }else{ // only run experiment if in correct browser
+      jsPsych.init({
+        timeline: timeline,
+        'show_progress_bar': true,
+        'auto_update_progress_bar': false,
+        'message_progress_bar': 'Completion Progress<br/>',
+        //on_start: function(){},
+        default_iti: 500
+      });
+    }
+    
+    
+    
+    
+    
+    ////////////////////////////////////////////////
+    // Extra functions
+    ////////////////////////////////////////////////
+    
+    /* Function checking browser */
+    function getBrowserInfo() { 
+      var ua = navigator.userAgent, tem, 
+      M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || []; 
+      if(/trident/i.test(M[1])) { 
+        tem=  /\brv[ :]+(\d+)/g.exec(ua) || []; 
+        return 'IE '+(tem[1] || ''); 
+      } 
+      if(M[1]=== 'Chrome') { 
+        tem= ua.match(/\b(OPR|Edge)\/(\d+)/); 
+        if(tem!= null) 
+        return tem.slice(1).join(' ').replace('OPR', 'Opera'); 
+      } 
+      M = M[2]? [M[1], M[2]]: [navigator.appName, navigator.appVersion, '-?']; 
+      if((tem= ua.match(/version\/(\d+)/i))!= null) 
+        M.splice(1, 1, tem[1]); 
+      return { 'browser': M[0], 'version': M[1] }; 
+    }
     
     </script>
   </body>
