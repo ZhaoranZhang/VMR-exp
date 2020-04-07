@@ -12,12 +12,18 @@ jsPsych.plugins["vmr"] = (function() {
     parameters: {  // Define all input parameters and their corresponding default values
       perturbation_angle: {
       pretty_name: "Perturbation angle",
-      type: jsPsych.plugins.parameterType.INT,
+      type: jsPsych.plugins.parameterType.INT, // BOOL, STRING, INT, FLOAT, FUNCTION, KEYCODE, SELECT, HTML_STRING, IMAGE, AUDIO, VIDEO, OBJECT, COMPLEX
       default: 0,
       description: "Degree of visuo-motor rotation"
       },
+      error_clamp: {
+      pretty_name: "Error clamp",
+      type: jsPsych.plugins.parameterType.BOOL,
+      default: false,
+      description: "Error-clamp trial"
+      },
       cursor_radius: {
-        type: jsPsych.plugins.parameterType.INT, // BOOL, STRING, INT, FLOAT, FUNCTION, KEYCODE, SELECT, HTML_STRING, IMAGE, AUDIO, VIDEO, OBJECT, COMPLEX
+        type: jsPsych.plugins.parameterType.INT, 
         pretty_name: "Cursor radius",
         default: 6,
         description: "Cursor radius in pixels"
@@ -180,19 +186,18 @@ jsPsych.plugins["vmr"] = (function() {
       MT: undefined,
       xArray: [],
       yArray: [],
-      velxArray: [],
-      velyArray: [],
+      //velxArray: [],
+      //velyArray: [],
       velArray: [],
       timeArray: [],
-      frameRate: [], //How often monitor refreshes (in ms)
-      frameID: [], // frame number
+      frameRate: [], // monitor refreshe interval (in ms)
       missTrial: 0
     }
 
 
-    var trialStartTime = undefined;
+    var trialStartTime;
     var stateStartTime;
-    var goStartTime = undefined;
+    var goStartTime;
     var currentTimestamp;
     var previousTimestamp;
     var frameRequest;
@@ -237,13 +242,19 @@ jsPsych.plugins["vmr"] = (function() {
       if (trialStartTime === undefined) { 
         trialStartTime = currentTimestamp;
         previousTimestamp = currentTimestamp; // for first frame, previous time stamp = current time
-      };
+      }
 
       //canvas.dispatchEvent(new Event('mousemove'));
 
       cursor.vel_sq = Math.pow(cursor.velx,2)+Math.pow(cursor.vely,2);
-    	cursor.xDisplayed = home.x+((cursor.x-home.x)*Math.cos(perturbationAngle)-(cursor.y-home.y)*Math.sin(perturbationAngle));
+      
+      if (trial.error_clamp) {
+        cursor.xDisplayed = target.x;
+      }else{
+        cursor.xDisplayed = home.x+((cursor.x-home.x)*Math.cos(perturbationAngle)-(cursor.y-home.y)*Math.sin(perturbationAngle));
+      }
       cursor.yDisplayed = home.y+((cursor.x-home.x)*Math.sin(perturbationAngle)+(cursor.y-home.y)*Math.cos(perturbationAngle));
+
     
       // Compute distances to home and target
       cursor.distanceToHome = Math.sqrt(Math.pow(cursor.xDisplayed-home.x,2)+Math.pow(cursor.yDisplayed-home.y,2));
@@ -277,7 +288,7 @@ jsPsych.plugins["vmr"] = (function() {
         // get onset time of go cue
         if (goStartTime === undefined) { 
           goStartTime = currentTimestamp;
-        };
+        }
 				if (!cursor.atHome){
           data.RT = performance.now()-stateStartTime;
 					stateStartTime = performance.now(); // ALWAYS RESET
@@ -335,16 +346,13 @@ jsPsych.plugins["vmr"] = (function() {
       if ((currentState==MOVING || currentState==GO) && goStartTime !== undefined){
         data.xArray.push(cursor.x);
         data.yArray.push(cursor.y);
-        data.velxArray.push(cursor.velx)
-        data.velyArray.push(cursor.vely)
-        data.velArray.push(cursor.vel_sq)
+        data.velArray.push(cursor.vel_sq);
         data.timeArray.push(Math.round(100 * ((currentTimestamp - goStartTime) + Number.EPSILON)) / 100); // save time stamps (rounded to 2 decimals; number.EPSILON avoids rounding errors)
       }
 
       if (frameID > 1) { // after first frame, get frame interval
         data.frameRate.push(Math.round(100 * ((currentTimestamp - previousTimestamp) + Number.EPSILON)) / 100); //Push the interval into the frameRate array (rounded to 2 decimals; number.EPSILON avoids rounding errors)
       }
-      data.frameID.push(frameID);
 
       previousTimestamp = currentTimestamp; //Update previous time stamp 
       frameID += 1;
@@ -379,14 +387,14 @@ jsPsych.plugins["vmr"] = (function() {
       //Place all the data to be saved from this trial in one data object
       var trial_data = { 
         "Pert": trial.perturbation_angle, // perturbation angle
-        "RT": Math.round(100 * (data.RT + Number.EPSILON)) / 100, // Response time (rounded to nearest ms)
+        "ErrClamp": trial.error_clamp, // error-clamp trial?
+        "RT": Math.round(100 * (data.RT + Number.EPSILON)) / 100, // Response time (rounded to nearest 2 decimals)
         "MT": Math.round(100 * (data.MT + Number.EPSILON)) / 100, // Movement time (excluding RT)
         "cursorX": JSON.stringify(data.xArray), // Cursor x-coordinates, in the form of a JSON string
         "cursorY": JSON.stringify(data.yArray), // Cursor y-coordinates
         "cursorVel": JSON.stringify(data.velArray), // Cursor velocity
         "TimeGo": JSON.stringify(data.timeArray), // Array of time stamps for each trajectory data point (time point since go cue)
-        "frameTime": JSON.stringify(data.frameRate), // Array of frame time in this trial
-        "frameID": JSON.stringify(data.frameID), // Array of frame IDs
+        "frameTime": JSON.stringify(data.frameRate), // Array of frame times in this trial
         "nFrames": frameID, //data.frameRate.length, // Number of frames in this trial    
         "avgFR": data.frameRate.reduce((total,current) => total + current)/frameID // Average frame rate of trial  
       }
