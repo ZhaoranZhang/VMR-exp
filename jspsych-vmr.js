@@ -37,7 +37,7 @@ jsPsych.plugins["vmr"] = (function() {
       home_location: {
         pretty_name: "Home location",
         type: jsPsych.plugins.parameterType.INT, 
-        default: [screen.availWidth/2,.75*screen.availHeight],
+        default: [screen.availWidth/2,.75*screen.availHeight],//[window.innerWidth/2,.75*window.innerHeight],
         array: true,
         description: "x and y coordinates of home position in pixels"
       },
@@ -180,17 +180,23 @@ jsPsych.plugins["vmr"] = (function() {
       MT: undefined,
       xArray: [],
       yArray: [],
+      velxArray: [],
+      velyArray: [],
+      velArray: [],
       timeArray: [],
       frameRate: [], //How often monitor refreshes (in ms)
+      frameID: [], // frame number
       missTrial: 0
     }
 
 
     var trialStartTime = undefined;
     var stateStartTime;
+    var goStartTime = undefined;
     var currentTimestamp;
     var previousTimestamp;
-    var frameRequestID;
+    var frameRequest;
+    var frameID = 1;
 
 
     // States
@@ -202,7 +208,6 @@ jsPsych.plugins["vmr"] = (function() {
     var TRIALEND = 5;
 
     var currentState = SETUP;
-
 
     // Initialize mouse event handler to get mouse x-/y-coordinates
     document.onmousemove = handleMouseMove; // set the mousemove event handler to be our function
@@ -224,14 +229,14 @@ jsPsych.plugins["vmr"] = (function() {
     // Everything in here is looping
     function stateProcess() {
 
-      frameRequestID = window.requestAnimationFrame(stateProcess); // Calls for another frame request (according to monoitor's FR)
+      frameRequest = window.requestAnimationFrame(stateProcess); // Calls for another frame request (according to monoitor's FR)
 
       currentTimestamp = performance.now(); //Variable to hold current timestamp when frame was initiated
 
       // if first frame
       if (trialStartTime === undefined) { 
         trialStartTime = currentTimestamp;
-        previousTimestamp = trialStartTime; // for first frame, previous time stamp = current time
+        previousTimestamp = currentTimestamp; // for first frame, previous time stamp = current time
       };
 
       //canvas.dispatchEvent(new Event('mousemove'));
@@ -246,8 +251,7 @@ jsPsych.plugins["vmr"] = (function() {
       cursor.atHome = cursor.distanceToHome < (home.radius-cursor.radius); // cursor fully inside home circle?
       cursor.atTarget = cursor.distanceToTarget < (target.radius-cursor.radius); // cursor fully inside home circle?
 
-      canvasHeaderText = '';
-      
+
       switch (currentState){
 
     		case SETUP:
@@ -269,7 +273,11 @@ jsPsych.plugins["vmr"] = (function() {
     			break;
 
 			case GO:
-				canvasHeaderText = 'GO!'
+        canvasHeaderText = 'GO!'
+        // get onset time of go cue
+        if (goStartTime === undefined) { 
+          goStartTime = currentTimestamp;
+        };
 				if (!cursor.atHome){
           data.RT = performance.now()-stateStartTime;
 					stateStartTime = performance.now(); // ALWAYS RESET
@@ -297,7 +305,7 @@ jsPsych.plugins["vmr"] = (function() {
 
 			case TRIALEND:
         canvasHeaderText = ' '
-        cancelAnimationFrame(frameRequestID);
+        cancelAnimationFrame(frameRequest);
         end_trial();
         break;
 
@@ -316,19 +324,30 @@ jsPsych.plugins["vmr"] = (function() {
           draw_circle(target.x,target.y,target.radius,target.colorHex,1);
         }
 	      
-	// Draw cursor
-        draw_circle(cursor.xDisplayed,cursor.yDisplayed,cursor.radius,cursor.colorHex,1);
+        // Draw cursor
+        if (cursor.x>0 && cursor.y > 0){ // only draw if within screen (and after mouse movement initiation, otherwise cursor is shown at [0,0])
+          draw_circle(cursor.xDisplayed,cursor.yDisplayed,cursor.radius,cursor.colorHex,1);
+        }
       }
 
 
       // Store frame-by-frame data
-      if (currentState==MOVING || currentState==GO){
+      if ((currentState==MOVING || currentState==GO) && goStartTime !== undefined){
         data.xArray.push(cursor.x);
         data.yArray.push(cursor.y);
-        data.timeArray.push(Math.round(100 * (currentTimestamp - trialStartTime + Number.EPSILON)) / 100); // save time stamps (rounded to 2 decimals; number.EPSILON avoids rounding errors)
+        data.velxArray.push(cursor.velx)
+        data.velyArray.push(cursor.vely)
+        data.velArray.push(cursor.vel_sq)
+        data.timeArray.push(Math.round(100 * ((currentTimestamp - goStartTime) + Number.EPSILON)) / 100); // save time stamps (rounded to 2 decimals; number.EPSILON avoids rounding errors)
       }
-      data.frameRate.push(Math.round(100 * (currentTimestamp - previousTimestamp + Number.EPSILON)) / 100); //Push the interval into the frameRate array (rounded to 2 decimals; number.EPSILON avoids rounding errors)
+
+      if (frameID > 1) { // after first frame, get frame interval
+        data.frameRate.push(Math.round(100 * ((currentTimestamp - previousTimestamp) + Number.EPSILON)) / 100); //Push the interval into the frameRate array (rounded to 2 decimals; number.EPSILON avoids rounding errors)
+      }
+      data.frameID.push(frameID);
+
       previousTimestamp = currentTimestamp; //Update previous time stamp 
+      frameID += 1;
 
     }
 
@@ -359,14 +378,17 @@ jsPsych.plugins["vmr"] = (function() {
 
       //Place all the data to be saved from this trial in one data object
       var trial_data = { 
+        "Pert": trial.perturbation_angle, // perturbation angle
         "RT": Math.round(100 * (data.RT + Number.EPSILON)) / 100, // Response time (rounded to nearest ms)
         "MT": Math.round(100 * (data.MT + Number.EPSILON)) / 100, // Movement time (excluding RT)
-        "cursorX": data.xArray, // Cursor x-coordinates, in the form of a JSON string
-        "cursorY": data.yArray, // Cursor y-coordinates
-        "Time": data.timeArray, // Array of time stamps for each trajectory data point
-        "frameTime": data.frameRate, // Array of frame time in this trial
-        "nFrames": data.frameRate.length, // Number of frames in this trial    
-        "avgFR": data.frameRate.reduce((total,current) => total + current)/data.frameRate.length // Average frame rate of trial  
+        "cursorX": JSON.stringify(data.xArray), // Cursor x-coordinates, in the form of a JSON string
+        "cursorY": JSON.stringify(data.yArray), // Cursor y-coordinates
+        "cursorVel": JSON.stringify(data.velArray), // Cursor velocity
+        "TimeGo": JSON.stringify(data.timeArray), // Array of time stamps for each trajectory data point (time point since go cue)
+        "frameTime": JSON.stringify(data.frameRate), // Array of frame time in this trial
+        "frameID": JSON.stringify(data.frameID), // Array of frame IDs
+        "nFrames": frameID, //data.frameRate.length, // Number of frames in this trial    
+        "avgFR": data.frameRate.reduce((total,current) => total + current)/frameID // Average frame rate of trial  
       }
       
       //Remove the canvas as the child of the display_element element
