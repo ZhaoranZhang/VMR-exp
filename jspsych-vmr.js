@@ -246,7 +246,8 @@ jsPsych.plugins["vmr"] = (function() {
       cursor.atHome = cursor.distanceToHome < (home.radius-cursor.radius); // cursor fully inside home circle?
       cursor.atTarget = cursor.distanceToTarget < (target.radius-cursor.radius); // cursor fully inside home circle?
 
-
+      canvasHeaderText = '';
+      
       switch (currentState){
 
     		case SETUP:
