@@ -1,136 +1,180 @@
-/*
- * CSS for jsPsych experiments.
- *
- * This stylesheet provides minimal styling to make jsPsych
- * experiments look polished without any additional styles.
- */
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>VMR-exp</title>
+        <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
 
- @import url(https://fonts.googleapis.com/css?family=Open+Sans:400italic,700italic,400,700); 
+        <!-- USING GITHUB FILES -->
+        <!-- <script src=https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych.js></script>
+        <script src=https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych-html-button-response.js></script>
+        <script src=https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych-vmr.js></script>
+        <script src=https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych-fullscreen.js></script> -->
+        <!--<link href="https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych_myStyle.css" rel="stylesheet" type="text/css"></link>-->
 
- /* @import url(https://fonts.googleapis.com/css?family=Roboto|Raleway|Roboto+Slab)
+        <script src=jspsych.js></script>
+        <script src=jspsych-html-button-response.js></script>
+        <script src=jspsych-vmr.js></script>
+        <script src=jspsych-fullscreen.js></script>
+       
+        
+        <!-- USING LOCAL FILES -->
+        <!-- <script src="jspsych.js"></script>
+        <script src="jspsych-html-button-response.js"></script>
+        <script src="jspsych-vmr.js"></script>
+        <script src="jspsych-fullscreen.js"></script> -->
+        <link href="jspsych_myStyle.css" rel="stylesheet" type="text/css"></link> 
 
-html {
-  font-family: sans-serif;
-  font-size: 18px;
-  line-height: 1.6em;
-} */
+    </head>
+<body>
+  
+<input type='hidden' name='all_data' id = 'all_data'> <!--this is just a placeholder -->
 
 
-/* Container holding jsPsych content */
+<script>
 
- .jspsych-display-element {
-   display: flex;
-   flex-direction: column;
-   overflow-y: auto;
- }
 
- .jspsych-display-element:focus {
-   outline: none;
- }
+// // Add style sheet (somehow doesn't work if doing it in head...)
+// var link = document.createElement('link');  // Create new link Element 
+// link.rel = 'stylesheet';  // set the attributes for link element 
+// link.type = 'text/css'; 
+// link.href = 'https://cdn.jsdelivr.net/gh/AnneLoffler/VMR-exp@master/jspsych_myStyle.css';  // load my style sheet
+// document.getElementsByTagName('HEAD')[0].appendChild(link);  // Get HTML head element to append link element to it  
 
- .jspsych-content-wrapper {
-   display: flex;
-   margin: auto;
-   flex: 1 1 100%;
-   width: 100%;
- }
 
- .jspsych-content {
-   max-width: 95%; /* this is mainly an IE 10-11 fix */
-   text-align: center;
-   margin: auto; /* this is for overflowing content */
- }
+//---------------------------------------------------------------
+//----------- Create structure for experiment: ------------------
+//---------------------------------------------------------------
 
- .jspsych-top {
-   align-items: flex-start;
- }
+/* create empty timeline */
+var timeline = [];
 
- .jspsych-middle {
-   align-items: center;
- }
+// run in full-screen mode
+timeline.push({
+  type: 'fullscreen',
+  fullscreen_mode: true,
+  delay_after: 0
+});
+    
+////////////////////////////////////////////////
+/* create instruction objects */
+var instructions1 = {
+    type: 'html-button-response',
+    stimulus: '<h3>Welcome to the experiment</h3>' + 
+    "<br/>" +
+    "<p>Move the cursor from the home position to the target.<p>" +
+    "<br/>" + 
+    "<p>Let's start with some practice.<p>" +
+    "<br/>",
+    choices: ['<h2>Start Practice</h2>'],
+    on_start: function() {$('body').css('cursor', 'auto')}, // show cursor before button click
+    on_finish: function() {$('body').css('cursor', 'none')} // hide cursor after button click
+};
 
-/* fonts and type */
+var instructions2 = {
+    type: 'html-button-response',
+    stimulus: '<h3>End of practice. Well done!</h3>' + 
+    "<br/>" +
+    "<p>Click the button to start the experiment.<p>" +
+    "<br/>",
+    choices: ['<h2>Start Experiment</h2>'],
+    on_start: function() {$('body').css('cursor', 'auto')}, // show cursor before button click
+    on_finish: function() {$('body').css('cursor', 'none')} // hide cursor after button click
+};
 
-.jspsych-display-element {
-  font-family: 'Open Sans', 'Arial', sans-serif;
-  font-size: 24px;
-  color: white;
-  background-color: black;
-  line-height: 1.6em;
+
+
+// initialize trial count & show progress bar
+var trialCount = 0;
+var totTrials = 11;
+//jsPsych.setProgressBar(0.01);
+
+
+
+////////////////////////////////////////////////
+/* create trial objects */
+// basline trials (no perturbation)
+var trial_baseline = {
+  type: 'vmr',
+  perturbation_angle: 0,
+  // cursor_radius: 6,
+  // home_radius: 10,
+  // target_radius: 12,
+  //home_location: [screen.availWidth/2,.75*screen.availHeight],
+  //target_location: [screen.availWidth/2,.25*screen.availHeight]
+  // cursor_color: 'red',
+  // home_color: 'white',
+  // target_color: 'white',
+  // background_color: 'black'
+  on_finish: function() {
+    trialCount += 1;
+    jsPsych.setProgressBar(trialCount/totTrials);
+  }
 }
 
-/* Form elements like input fields and buttons */
-
-.jspsych-display-element input[type="text"] {
-  font-family: 'Open Sans', 'Arial', sans-serif;
-  font-size: 14px;
+// experimental trials (perturbation)
+var trial_pert = {
+  type: 'vmr',
+  perturbation_angle: -15,
+  on_finish: function() {
+    trialCount += 1;
+    jsPsych.setProgressBar(trialCount/totTrials);
+  }
 }
 
-/* borrowing Bootstrap style for btn elements, but combining styles a bit */
-.jspsych-btn {
-  display: inline-block;
-  padding: 6px 12px;
-  margin: 0px;
-  font-size: 14px;
-  font-weight: 400;
-  font-family: 'Open Sans', 'Arial', sans-serif;
-  cursor: pointer;
-  line-height: 1.4;
-  text-align: center;
-  white-space: nowrap;
-  vertical-align: middle;
-  background-image: none;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  color: #333;
-  background-color:#fff;
-  border-color: #ccc;
+
+
+
+////////////////////////////////////////////////
+/* create block objects */
+var practice_block = {
+  timeline: [trial_baseline],
+  //timeline_variables: [],
+  repetitions: 2
 }
 
-.jspsych-btn:hover {
-  background-color: #ddd;
-  border-color: #aaa;
+var baseline_block = {
+  timeline: [trial_baseline],
+  repetitions: 2//10
 }
 
-.jspsych-btn:disabled {
-  background-color: #eee;
-  color: #aaa;
-  border-color: #ccc;
-  cursor: not-allowed;
+var adaptation_block = {
+  timeline: [trial_pert],
+  repetitions: 5//30
 }
+//randomize_order: false
 
-/* jsPsych progress bar */
 
-#jspsych-progressbar-container {
-  color: #555;
-  border-bottom: 1px solid #dedede;
-  background-color: #f9f9f9;
-  margin-bottom: 1em;
-  text-align: center;
-  padding: 8px 0px;
-  width: 100%;
-  line-height: 1em;
-}
-#jspsych-progressbar-container span {
-  font-size: 14px;
-  padding-right: 14px;
-}
-#jspsych-progressbar-outer {
-  background-color: #eee;
-  width: 50%;
-  margin: auto;
-  height: 14px;
-  display: inline-block;
-  vertical-align: middle;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
-}
-#jspsych-progressbar-inner {
-  background-color: #aaa;
-  width: 0%;
-  height: 100%;
-}
 
-/* Control appearance of jsPsych.data.displayData() */
-#jspsych-data-display {
-  text-align: left;
-}
+
+////////////////////////////////////////////////
+// now push everything to timeline
+timeline.push(instructions1);
+timeline.push(practice_block);
+timeline.push(instructions2);
+timeline.push(baseline_block);
+timeline.push(adaptation_block);
+timeline.push(baseline_block);
+
+
+/* start the experiment */
+jsPsych.init({
+  timeline: timeline,
+  exclusions: { // exlusion based on min required screen size (?)
+    min_width: 800,
+    min_height: 600
+  },
+  'show_progress_bar': true,
+  'auto_update_progress_bar': false,
+  'message_progress_bar': 'Completion Progress',
+  on_finish: function(){ 
+    jsPsych.data.displayData(); // 'csv'
+    //var all_data = jsPsych.data.get().csv(); // create new variable that contains all data from experiment
+    //$('#submitButton').show();
+    //jsPsych.turk.submitToTurk({ all_data });
+    $('body').css('cursor', 'auto');
+    },
+  default_iti: 750
+});
+
+
+</script>
