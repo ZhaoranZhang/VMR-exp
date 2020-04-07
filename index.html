@@ -53,14 +53,16 @@
     /* Initialize trial numbers */
     var trialCount = 0; // count trials across all blocks (used for progress bar)
 
-    var trials = {
-      practice: 2,
-      baseline: 2,
-      adaptation: 5,
-      afterEffect: 2
+    var trials = { 
+      practice: 2, 
+      baseline: 2, // 100 in McDougle Paper
+      initialPert: 10, // 200 "-"
+      counterPert: 2, // 20 "-"
+      errorClamp: 5 // 100 "-"
     }
+    // note: in McDougle, 10% of baseline and initialPert trials are error_clamp trials
    
-    var totTrials = trials.practice+trials.baseline+trials.adaptation+trials.afterEffect;  // compute total number of trials (needed for progress bar)
+    var totTrials = trials.practice+trials.baseline+trials.initialPert+trials.counterPert+trials.errorClamp;  // compute total number of trials (needed for progress bar)
     
 
 
@@ -111,10 +113,30 @@
       }
     }
     
-    // An adaptation trial
-    var trial_pert = {
+    // A perturbation trial
+    var trial_initialPert = {
       type: 'vmr',
       perturbation_angle: -15,
+      on_finish: function() {
+        trialCount += 1;
+        jsPsych.setProgressBar(trialCount/totTrials);
+      }
+    }
+    
+    // A counter-perturbation trial
+    var trial_counterPert = {
+      type: 'vmr',
+      perturbation_angle: +15,
+      on_finish: function() {
+        trialCount += 1;
+        jsPsych.setProgressBar(trialCount/totTrials);
+      }
+    }
+    
+    // An error-clamp trial
+    var trial_errorClamp = {
+      type: 'vmr',
+      error_clamp: true,
       on_finish: function() {
         trialCount += 1;
         jsPsych.setProgressBar(trialCount/totTrials);
@@ -133,15 +155,21 @@
       repetitions: trials.baseline
     }
     
-    var adaptation_block = {
-      timeline: [trial_pert],
-      repetitions: trials.adaptation
+    var initialPert_block = {
+      timeline: [trial_initialPert],
+      repetitions: trials.initialPert
     }
     //randomize_order: false
     
-    var afterEffect_block = {
-      timeline: [trial_baseline],
-      repetitions: trials.afterEffect
+    var counterPert_block = {
+      timeline: [trial_counterPert],
+      repetitions: trials.counterPert
+    }
+    
+    
+    var errorClamp_block = {
+      timeline: [trial_errorClamp],
+      repetitions: trials.errorClamp
     }
     
     /* Create Firebase SAVE functions and block object */
@@ -189,17 +217,21 @@
     timeline.push(instructions1);
     timeline.push(practice_block);
     timeline.push(instructions2);
+    
     timeline.push(baseline_block);
-    timeline.push(adaptation_block);
-    timeline.push(afterEffect_block);
+    timeline.push(initialPert_block);
+    timeline.push(counterPert_block);
+    timeline.push(errorClamp_block);
+    
     timeline.push(save_screen);
     timeline.push(code_screen);
     
     ////////////////////////////////////////////////
     // 3. Start the experiment
     ////////////////////////////////////////////////
-    if (getBrowserInfo() !== 'Chrome' && getBrowserInfo() !== 'Firefox') {
-    	var wrong_browser = {
+    var browserInfo = getBrowserInfo();
+    if (browserInfo.browser !== 'Chrome' && browserInfo.browser !== 'Firefox') {
+      var wrong_browser = {
     			type: 'html-button-response',
     			stimulus: '<p>This experiment only has support for Google Chrome or Mozilla Firefox.</p>'
     			+ '<p>Please reopen the experiment in one of these browsers.</p>',
