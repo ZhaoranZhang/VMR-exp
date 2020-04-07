@@ -136,6 +136,8 @@
       });
     }
     
+    // ADD A COMMENT
+    
     var save_screen = {
       type: 'html-button-response',
       stimulus: '<h3>The experiment is over. Thank you!</h3>' + "<br/>" +
@@ -144,7 +146,6 @@
       on_start: function() {$('body').css('cursor', 'auto')}, // show cursor
       on_finish: function() {
         saveToFirebase(code, jsPsych.data.get().values());
-        //saveToFirebase(code, {message: "Here is some data."});
       }
     }
     
