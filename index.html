@@ -116,6 +116,9 @@
     //randomize_order: false
     
     /* Create Firebase SAVE functions and block object */
+    // This function creates a random 5-character ID string
+    // We might want to use Worker ID instead (ask them to input at beginning)
+    // That way we could also check if this worker has already done task
     function makeid(){
       var text = "";
       var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -123,6 +126,7 @@
           text += possible.charAt(Math.floor(Math.random() * possible.length));
       return text;
     }
+    var code = makeid();
   
     function saveToFirebase(code, filedata){
       var ref = firebase.database().ref(code).set(filedata, function(error) {
@@ -131,8 +135,6 @@
         }
       });
     }
-  
-    var code = makeid();
     
     var save_screen = {
       type: 'html-button-response',
@@ -141,8 +143,8 @@
       choices: ['<h2>Get Code</h2>'],
       on_start: function() {$('body').css('cursor', 'auto')}, // show cursor
       on_finish: function() {
-        //saveToFirebase(code, jsPsych.data.get().json());
-        saveToFirebase(code, {message: "Here is some data."});
+        saveToFirebase(code, jsPsych.data.get().values());
+        //saveToFirebase(code, {message: "Here is some data."});
       }
     }
     
