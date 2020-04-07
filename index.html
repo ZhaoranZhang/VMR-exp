@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+  
+  <head>
+    <title>Motor Study</title>
+    
+    <!-- *** CSS *** -->
+    <link rel='stylesheet' type='text/css' href='jspsych_myStyle.css'>
+    
+    <!-- *** JQUERY *** -->
+    <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
+    
+    <!-- *** JSPSYCH *** -->
+    <script src=jspsych.js></script>
+    <script src=jspsych-html-button-response.js></script>
+    <script src=jspsych-vmr.js></script>
+    <script src=jspsych-fullscreen.js></script>
+    
+    <!-- *** FIREBASE *** -->
+    <!-- The core Firebase JS SDK is always required and must be listed first -->
+    <script src="/__/firebase/7.13.2/firebase-app.js"></script>
+    <!-- Add SDKs for Firebase products that you want to use
+         https://firebase.google.com/docs/web/setup#available-libraries -->
+    <script src="/__/firebase/7.13.2/firebase-analytics.js"></script> <!-- Analytics -->
+    <script src="/__/firebase/7.13.2/firebase-database.js"></script> <!-- Realtime Database -->
+    <!-- Initialize Firebase -->
+    <script src="/__/firebase/init.js"></script>
+    <!-- Configure Realtime Database config -->
+    <script>
+      // Set the configuration for your app
+      var config = {
+        //apiKey: "apiKey",
+        //authDomain: "projectId.firebaseapp.com",
+        databaseURL: "https://motorlearn-cb21c.firebaseio.com/",
+        //storageBucket: "bucket.appspot.com"
+      };
+      firebase.initializeApp(config);
+    
+      // Get a reference to the database service (optional)
+      var database = firebase.database();
+    </script>
+  </head>
+  
+  <!--THE EXPERIMENT -->
+  <body>
+    <script> 
+    
+    ////////////////////////////////////////////////
+    // 1. Create structure for experiment
+    ////////////////////////////////////////////////
+    
+    /* Create empty TIMELINE */
+    var timeline = [];
+    
+    /* Create SCREENMODE objects */
+    var screenmode = {
+      type: 'fullscreen',
+      fullscreen_mode: true
+    }
+        
+    /* Create INSTRUCTIONS objects */
+    var instructions1 = {
+        type: 'html-button-response',
+        stimulus: '<h3>Welcome to the experiment</h3>' + "<br/>" +
+        "<p>Move the cursor from the home position to the target.<p>" + "<br/>" + 
+        "<p>Let's start with some practice.<p>" + "<br/>",
+        choices: ['<h2>Start Practice</h2>'],
+        on_start: function() {$('body').css('cursor', 'auto')}, // show cursor before button click
+        on_finish: function() {$('body').css('cursor', 'none')} // hide cursor after button click
+    };
+    
+    var instructions2 = {
+        type: 'html-button-response',
+        stimulus: '<h3>End of practice. Well done!</h3>' + "<br/>" +
+        "<p>Click the button to start the experiment.<p>" + "<br/>",
+        choices: ['<h2>Start Experiment</h2>'],
+        on_start: function() {$('body').css('cursor', 'auto')}, // show cursor before button click
+        on_finish: function() {$('body').css('cursor', 'none')} // hide cursor after button click
+      };
+    
+    /* Create TRIAL objects */
+    // A baseline trial
+    var trial_baseline = {
+      type: 'vmr',
+      perturbation_angle: 0
+      // cursor_radius: 6,
+      // home_radius: 10,
+      // target_radius: 12,
+      // home_location: [500,500],
+      // target_location: [500,700],
+      // cursor_color: 'red',
+      // home_color: 'white',
+      // target_color: 'white',
+      // background_color: 'black'
+    }
+    
+    // An adaptation trial
+    var trial_pert = {
+      type: 'vmr',
+      perturbation_angle: -15
+    }
+    
+    /* Create BLOCK objects */
+    var practice_block = {
+      timeline: [trial_baseline],
+      //timeline_variables: [],
+      repetitions: 2
+    }
+    
+    var baseline_block = {
+      timeline: [trial_baseline],
+      repetitions: 2//10
+    }
+    
+    var adaptation_block = {
+      timeline: [trial_pert],
+      repetitions: 5//30
+    }
+    //randomize_order: false
+    
+    /* Create Firebase SAVE functions and object */
+    function makeid(){
+      var text = "";
+      var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      for( var i=0; i < 5; i++ )
+          text += possible.charAt(Math.floor(Math.random() * possible.length));
+      return text;
+    }
+  
+    function saveToFirebase(code, filedata){
+      var ref = firebase.database().ref(code).set(filedata);
+    }
+  
+    var code = makeid();
+  
+    var submit_block = {
+      type: 'single-stim',
+      stimuli: [" "],
+      choices: ['none'],
+      timing_response: .001,
+      timing_post_trial: 0,
+      on_finish: function() {
+          saveToFirebase(code, jsPsych.data.getData());
+      }
+    }
+    
+    ////////////////////////////////////////////////
+    // 2. Push everything to timeline
+    ////////////////////////////////////////////////
+    timeline.push(screenmode);
+    timeline.push(instructions1);
+    timeline.push(practice_block);
+    timeline.push(instructions2);
+    timeline.push(baseline_block);
+    timeline.push(adaptation_block);
+    timeline.push(baseline_block);
+    timeline.push(submit_block);
+    
+    ////////////////////////////////////////////////
+    // 3. Start the experiment
+    ////////////////////////////////////////////////
+    jsPsych.init({
+      timeline: timeline,
+      on_finish: function(){},
+      default_iti: 750
+    });
+    
+    </script>
+  </body>
+</html>
