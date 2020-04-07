@@ -361,10 +361,10 @@ jsPsych.plugins["vmr"] = (function() {
       var trial_data = { 
         "RT": Math.round(100 * (data.RT + Number.EPSILON)) / 100, // Response time (rounded to nearest ms)
         "MT": Math.round(100 * (data.MT + Number.EPSILON)) / 100, // Movement time (excluding RT)
-        "cursorX": JSON.stringify(data.xArray), // Cursor x-coordinates, in the form of a JSON string
-        "cursorY": JSON.stringify(data.yArray), // Cursor y-coordinates
-        "Time": JSON.stringify(data.timeArray), // Array of time stamps for each trajectory data point
-        "frameTime": JSON.stringify(data.frameRate), // Array of frame time in this trial
+        "cursorX": data.xArray, // Cursor x-coordinates, in the form of a JSON string
+        "cursorY": data.yArray, // Cursor y-coordinates
+        "Time": data.timeArray, // Array of time stamps for each trajectory data point
+        "frameTime": data.frameRate, // Array of frame time in this trial
         "nFrames": data.frameRate.length, // Number of frames in this trial    
         "avgFR": data.frameRate.reduce((total,current) => total + current)/data.frameRate.length // Average frame rate of trial  
       }

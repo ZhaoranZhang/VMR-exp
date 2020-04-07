@@ -37,7 +37,7 @@
       firebase.initializeApp(config);
     
       // Get a reference to the database service (optional)
-      var database = firebase.database();
+      //var database = firebase.database();
     </script>
   </head>
   
@@ -132,16 +132,13 @@
     }
   
     var code = makeid();
-  
-    var submit_block = {
-      type: 'single-stim',
-      stimuli: [" "],
-      choices: ['none'],
-      timing_response: .001,
-      timing_post_trial: 0,
-      on_finish: function() {
-          saveToFirebase(code, jsPsych.data.getData());
-      }
+    
+    var save_screen = {
+      type: 'html-button-response',
+      stimulus: '<h3>The experiment is over. Thank you!</h3>' + "<br/>" +
+      "<p>Click the button to receive validation code.<p>" + "<br/>",
+      choices: ['<h2>Get Code</h2>'],
+      on_start: function() {$('body').css('cursor', 'auto')}, // show cursor
     }
     
     ////////////////////////////////////////////////
@@ -154,7 +151,7 @@
     timeline.push(baseline_block);
     timeline.push(adaptation_block);
     timeline.push(baseline_block);
-    timeline.push(submit_block);
+    timeline.push(save_screen);
     
     ////////////////////////////////////////////////
     // 3. Start the experiment
@@ -162,7 +159,7 @@
     jsPsych.init({
       timeline: timeline,
       on_finish: function(){},
-      default_iti: 750
+      default_iti: 500
     });
     
     </script>
