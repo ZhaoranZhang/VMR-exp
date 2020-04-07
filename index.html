@@ -49,6 +49,19 @@
     /* Create empty TIMELINE */
     var timeline = [];
     
+    
+    /* Initialize trial numbers */
+    var trialCount = 0; // count trials across all blocks (used for progress bar)
+
+    var trials = {
+      practice: 2,
+      baseline: 2,
+      adaptation: 5,
+      afterEffect: 2
+    }
+   
+    var totTrials = trials.practice+trials.baseline+trials.adaptation+trials.afterEffect;  // compute total number of trials (needed for progress bar)
+    
     /* Create SCREENMODE objects */
     var screenmode = {
       type: 'fullscreen',
@@ -79,7 +92,7 @@
     // A baseline trial
     var trial_baseline = {
       type: 'vmr',
-      perturbation_angle: 0
+      perturbation_angle: 0,
       // cursor_radius: 6,
       // home_radius: 10,
       // target_radius: 12,
@@ -89,31 +102,44 @@
       // home_color: 'white',
       // target_color: 'white',
       // background_color: 'black'
+      on_finish: function() {
+        trialCount += 1;
+        jsPsych.setProgressBar(trialCount/totTrials);
+      }
     }
     
     // An adaptation trial
     var trial_pert = {
       type: 'vmr',
-      perturbation_angle: -15
+      perturbation_angle: -15,
+      on_finish: function() {
+        trialCount += 1;
+        jsPsych.setProgressBar(trialCount/totTrials);
+      }
     }
     
     /* Create BLOCK objects */
     var practice_block = {
       timeline: [trial_baseline],
       //timeline_variables: [],
-      repetitions: 2
+      repetitions: trials.practice
     }
     
     var baseline_block = {
       timeline: [trial_baseline],
-      repetitions: 2//10
+      repetitions: trials.baseline
     }
     
     var adaptation_block = {
       timeline: [trial_pert],
-      repetitions: 5//30
+      repetitions: trials.adaptation
     }
     //randomize_order: false
+    
+    var afterEffect_block = {
+      timeline: [trial_baseline],
+      repetitions: trials.afterEffect
+    }
     
     /* Create Firebase SAVE functions and block object */
     // This function creates a random 5-character ID string
@@ -135,8 +161,6 @@
         }
       });
     }
-    
-    // ADD A COMMENT
     
     var save_screen = {
       type: 'html-button-response',
@@ -164,7 +188,7 @@
     timeline.push(instructions2);
     timeline.push(baseline_block);
     timeline.push(adaptation_block);
-    timeline.push(baseline_block);
+    timeline.push(afterEffect_block);
     timeline.push(save_screen);
     timeline.push(code_screen);
     
@@ -173,6 +197,9 @@
     ////////////////////////////////////////////////
     jsPsych.init({
       timeline: timeline,
+      'show_progress_bar': true,
+      'auto_update_progress_bar': false,
+      'message_progress_bar': 'Completion Progress',
       on_finish: function(){},
       default_iti: 500
     });
