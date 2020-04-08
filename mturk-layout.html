@@ -1,0 +1,68 @@
+<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
+
+<style>
+body{
+	font-size: 12pt;
+	font-family: Helvetica;
+	text-align: left;
+}
+
+#instructions {
+	width: 600px;
+	margin-left: 50px;
+}
+
+#startExperiment{
+	color: rgb(0,0,200);
+}
+
+#startExperiment:hover{
+	color: rgb(0,0,255);
+}
+
+#submitButton{ /* id='submitButton' is added by MTurk */
+	display: none;
+}
+
+</style>
+
+<!-- Create an instructions div -->
+<div id='instructions'>
+	
+	<p>Before accepting this HIT, please note:<br><br>
+	1. This HIT requires<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	&mdash; A laptop or desktop computer with a mouse or trackpad.<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	&mdash; Full-screen mode<br>
+	2. Touch-screen devices are NOT supported (phones, tablets, etc.)<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	&mdash; You will be unable to complete the task on these devices.</p>
+
+    <p>Click the link below to open the experiment in a new tab.<br>
+	Before starting, you will be prompted to enter your Worker ID (copy it now).</p>
+
+	<div id='startExperimentLink'>
+		<p><a href="#" id="startExperiment">Open experiment</a></p>
+	</div>
+	
+	<p>When you finish the experiment, you will receive a completion code.<br>
+	Enter that code and click the confirm button to reveal the submit button.</p>
+	
+	<div id='codeForm'>
+		<p>Completion code: <input type='text' name='validation_code' value='' id='validation_code'> <button type='button' form='validation_code'>Confirm</button></p>
+	</div>
+</div>
+
+<script>
+
+// Check that the validation code exists in our database
+$('#confirmCode').
+
+if (validCode){
+    $('#submitButton').show(); // if yes, show the submit button
+}else{
+    // Handle a bad validation code...
+}
+
+</script>
