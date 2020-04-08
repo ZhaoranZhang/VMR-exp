@@ -3,7 +3,7 @@
  */ 
 
 
-jsPsych.plugins["vmr"] = (function() {
+jsPsych.plugins.vmr = (function() {
 
   var plugin = {};
 
@@ -43,16 +43,21 @@ jsPsych.plugins["vmr"] = (function() {
       home_location: {
         pretty_name: "Home location",
         type: jsPsych.plugins.parameterType.INT, 
-        default: [screen.availWidth/2,.75*screen.availHeight],//[window.innerWidth/2,.75*window.innerHeight],
+        default: [screen.availWidth/2,0.75*screen.availHeight],
         array: true,
         description: "x and y coordinates of home position in pixels"
       },
-      target_location: {
-        pretty_name: "Target location",
+      target_angle: {
+        pretty_name: "Target angle",
+        type: jsPsych.plugins.parameterType.FLOAT, 
+        default: 90 * Math.PI/180,
+        description: "angle from home to target in RADIANS"
+      },
+      target_distance: {
+        pretty_name: "Target distance",
         type: jsPsych.plugins.parameterType.INT, 
-        default: [screen.availWidth/2,.25*screen.availHeight],
-        array: true,
-        description: "x and y coordinates of target in pixels"
+        default: 0.5*screen.availHeight,
+        description: "distance from home to target in pixels"
       },
       cursor_color: {
         type: jsPsych.plugins.parameterType.STRING, 
@@ -115,7 +120,7 @@ jsPsych.plugins["vmr"] = (function() {
         description: "Screen background color"
       }
     }
-  }
+  };
 
 
 
@@ -133,7 +138,6 @@ jsPsych.plugins["vmr"] = (function() {
     // clear canvas & hide cursor
     canvas.style.cursor = 'none';
 
-		
 		//The document body IS 'display_element' (i.e. <body class="jspsych-display-element"> .... </body> )
 		var body = document.getElementsByClassName("jspsych-display-element")[0];
 		
@@ -145,11 +149,15 @@ jsPsych.plugins["vmr"] = (function() {
 		//Remove the margins and paddings of the display_element
 		body.style.margin = 0;
 		body.style.padding = 0;
+		body.style.overflow = 'hidden';
+		body.style.width = '100%';
+		body.style.height = '100%';
 		body.style.backgroundColor = trial.background_color; //Match the background of the display element to the background color of the canvas so that the removal of the canvas at the end of the trial is not noticed
 
 		//Remove the margins and padding of the canvas
 		canvas.style.margin = 0;
 		canvas.style.padding = 0;		
+		//canvas.style.position = 'absolute';
 		
 		//Get the context of the canvas so that it can be painted on.
 		var ctx = canvas.getContext("2d");
@@ -157,6 +165,8 @@ jsPsych.plugins["vmr"] = (function() {
 		//Declare variables for width and height, and also set the canvas width and height to the window width and height
 		var canvasWidth = canvas.width = window.innerWidth;
 		var canvasHeight = canvas.height = window.innerHeight;
+		//var canvasWidth = window.innerWidth;
+		//var canvasHeight = window.innerHeight;
     var centerX = canvasWidth / 2;
     var centerY = canvasHeight / 2;
 
@@ -188,19 +198,25 @@ jsPsych.plugins["vmr"] = (function() {
     };
 
     var home = {
-      x: trial.home_location[0],
-      y: trial.home_location[1],
+      x: screen.availWidth/2,
+      y: 0.75*screen.availHeight,
+      //x: trial.home_location[0],
+      //y: trial.home_location[1],
       radius: trial.home_radius,
       colorHex: trial.home_color
-    }
+    };
 
     var target = {
-      x: trial.target_location[0],
-      y: trial.target_location[1],
+      distance: 0.5*screen.availHeight,
+      angle: trial.target_angle, // remember it's already radians
+      x: home.x+Math.cos(trial.target_angle)*0.5*screen.availHeight,
+      y: home.y-Math.sin(trial.target_angle)*0.5*screen.availHeight,
       radius: trial.target_radius,
       colorHex: trial.target_color
-    }
-
+    };
+    
+    console.log(home);
+    console.log(target);
 
     // initialize variables to be saved in every trial
     var data = {
@@ -217,7 +233,7 @@ jsPsych.plugins["vmr"] = (function() {
       frameRate: [], // monitor refreshe interval (in ms)
       missTrial: false,
       missTrialMsg: '' // miss trial message
-    }
+    };
 
 
     var trialStartTime;
@@ -244,13 +260,13 @@ jsPsych.plugins["vmr"] = (function() {
       First: false,   // True for the first iteration in a new state.
       TimeStamp: -1,  // Time since last state change
       
-    }
+    };
     
     // save state names as strings for output
     StateNames = ['Setup', 'Start', 'DELAY','GO','MOVING','FEEDBACK','RETURN','TRIALEND']; 
 
-    var canvasHeaderText = ''
-    var feedbackText = ''
+    var canvasHeaderText = '';
+    var feedbackText = '';
     
     // Initialize mouse event handler to get mouse x-/y-coordinates
     document.onmousemove = handleMouseMove; // set the mousemove event handler to be our function
@@ -281,16 +297,21 @@ jsPsych.plugins["vmr"] = (function() {
       cursor.vel_sq = Math.pow(cursor.velx,2)+Math.pow(cursor.vely,2);
       
       if (trial.error_clamp) {
-        if (State.Current < State.RETURN) {
-          cursor.xDisplayed = target.x;
-        } else { // during return movement, recalibrate according to last cursor location (to do)
+        if (Math.abs(target.angle-Math.atan(-(cursor.y-home.y)/(cursor.x-home.x)))>Math.PI/2){
           cursor.xDisplayed = cursor.x;
+          cursor.yDisplayed = cursor.y;
+        }else{
+          cursor.distanceToHome = Math.sqrt(Math.pow(cursor.x-home.x,2)+Math.pow(cursor.y-home.y,2));
+          clampWeight = Math.min(1,Math.pow(cursor.distanceToHome/target.distance,0.5));
+          clampX = home.x+Math.cos(target.angle)*cursor.distanceToHome;
+          clampY = home.y-Math.sin(target.angle)*cursor.distanceToHome;
+          cursor.xDisplayed = clampWeight*clampX + (1-clampWeight)*cursor.x;
+          cursor.yDisplayed = clampWeight*clampY + (1-clampWeight)*cursor.y;
         }
       }else{
         cursor.xDisplayed = home.x+((cursor.x-home.x)*Math.cos(perturbationAngle)-(cursor.y-home.y)*Math.sin(perturbationAngle));
+        cursor.yDisplayed = home.y+((cursor.x-home.x)*Math.sin(perturbationAngle)+(cursor.y-home.y)*Math.cos(perturbationAngle));
       }
-      cursor.yDisplayed = home.y+((cursor.x-home.x)*Math.sin(perturbationAngle)+(cursor.y-home.y)*Math.cos(perturbationAngle));
-
     
       // Compute distances to home and target
       cursor.distanceToHome = Math.sqrt(Math.pow(cursor.xDisplayed-home.x,2)+Math.pow(cursor.yDisplayed-home.y,2));
@@ -312,7 +333,6 @@ jsPsych.plugins["vmr"] = (function() {
           trialStartTime = currentTimestamp;
         }
         data.trialTimeArray.push(Math.round(100 * ((currentTimestamp - trialStartTime) + Number.EPSILON)) / 100); // save time stamps (rounded to 2 decimals; number.EPSILON avoids rounding errors)
-        //data.rawTimeArray.push(Math.round(100 * (currentTimestamp + Number.EPSILON)) / 100); // save time stamps (rounded to 2 decimals; number.EPSILON avoids rounding errors)
         data.stateArray.push(StateNames[State.Current]);
         data.frameRate.push(Math.round(100 * ((currentTimestamp - previousTimestamp) + Number.EPSILON)) / 100); //Push the interval into the frameRate array (rounded to 2 decimals; number.EPSILON avoids rounding errors)
         
@@ -329,24 +349,24 @@ jsPsych.plugins["vmr"] = (function() {
     			break;
     			
     		case State.START: 
-    		  if (cursor.atHome && cursor.vel_sq==0){ // speed in px/frame 
-    				canvasHeaderText = '' 
+    		  if (cursor.atHome && cursor.vel_sq===0){ // speed in px/frame 
+    				canvasHeaderText = '';
 	    			stateStartTime = performance.now(); // ALWAYS RESET WHEN ADVANCING
 	    			State.Current=State.DELAY;
     		  }else{
-    				canvasHeaderText = 'Move the cursor inside the gray dot.'
+    				canvasHeaderText = 'Move the cursor inside the gray dot.';
     			}
     			break;
     			
     		case State.DELAY: // check that participant stays in home position during delay period
     			if (cursor.atHome){ // cursor still at home?
-    				canvasHeaderText = '' // state only lasts 250 ms
+    				canvasHeaderText = ''; // state only lasts 250 ms
     				if ((currentTimestamp-stateStartTime)>trial.onset_delay){
 	    				stateStartTime = performance.now(); // ALWAYS RESET WHEN ADVANCING
 	    				State.Current=State.GO;
 	    			}
     			}else{
-    				canvasHeaderText = ''
+    				canvasHeaderText = '';
     				data.missTrial = true;
             data.missTrialMsg = 'too_early';
             stateStartTime = performance.now(); // RESET
@@ -355,7 +375,7 @@ jsPsych.plugins["vmr"] = (function() {
     			break;
 
 			case State.GO:
-        canvasHeaderText = 'GO!'
+        canvasHeaderText = 'GO!';
 				if (!cursor.atHome){
           data.RT = performance.now()-stateStartTime;
 					stateStartTime = performance.now(); // ALWAYS RESET
@@ -369,7 +389,7 @@ jsPsych.plugins["vmr"] = (function() {
 				break;
 
 			case State.MOVING:
-				canvasHeaderText = 'GO!'
+				canvasHeaderText = 'GO!';
 				if (cursor.atTarget && cursor.vel_sq<9){ // speed in px/frame 
           data.MT = performance.now()-stateStartTime;
           stateStartTime = performance.now(); // RESET
@@ -383,7 +403,7 @@ jsPsych.plugins["vmr"] = (function() {
 				break;
 
 			case State.FEEDBACK: 
-				canvasHeaderText = ''; //'Target acquired! (+1)'
+				canvasHeaderText = '';
 
         // Miss trials
 			  if (data.missTrial){
@@ -415,7 +435,7 @@ jsPsych.plugins["vmr"] = (function() {
       
       case State.RETURN: 
         canvasHeaderText = 'Move the cursor inside the gray dot.';
-        if (cursor.atHome && cursor.vel_sq==0){
+        if (cursor.atHome && cursor.vel_sq===0){
           stateStartTime = performance.now(); // RESET
 				  State.Current = State.TRIALEND;
 				} else if ((performance.now() - stateStartTime) > trial.timeout_return) { // if not back home, check if return time-out
@@ -453,7 +473,7 @@ jsPsych.plugins["vmr"] = (function() {
         }
         
         // Draw target position
-        if (State.Current>=State.GO && State.Current!==State.RETURN && data.missTrial==false){ // don't show target if return error
+        if (State.Current>=State.GO && State.Current!==State.RETURN && data.missTrial===false){ // don't show target if return error
           draw_circle(target.x,target.y,target.radius,target.colorHex,1);
         }
 
@@ -509,7 +529,7 @@ jsPsych.plugins["vmr"] = (function() {
         "avgFR": data.frameRate.reduce((total,current) => total + current)/frameID, // Average frame rate of trial  
         "missTrial": data.missTrial, // miss trial (true/false)
         "missTrialMsg": data.missTrialMsg // miss trial message/type
-      }
+      };
       
       //Remove the canvas as the child of the display_element element
       display_element.innerHTML='';
