@@ -77,22 +77,6 @@
     /* Create empty TIMELINE */
     var timeline = [];
     
-    
-    /* Initialize trial numbers */
-    var trialCount = 0; // count trials across all blocks (used for progress bar)
-
-    var trials = { 
-      practice: 2, 
-      baseline: 2, // 100 in McDougle Paper
-      initialPert: 10, // 200 "-"
-      counterPert: 2, // 20 "-"
-      errorClamp: 5 // 100 "-"
-    }
-    // note: in McDougle, 10% of baseline and initialPert trials are error_clamp trials
-   
-    var totTrials = trials.practice+trials.baseline+trials.initialPert+trials.counterPert+trials.errorClamp;  // compute total number of trials (needed for progress bar)
-    
-
 
     /* Create SCREENMODE objects */
     var screenmode = {
@@ -121,20 +105,27 @@
         on_finish: function() {$('body').css('cursor', 'none')} // hide cursor after button click
       };
     
+    
     /* Create TRIAL objects */
+    
+    // How many trials will you have of each type?
+    var trials = { 
+      practice: 2, 
+      baseline: 2, // 100 in McDougle Paper
+      initialPert: 10, // 200 "-"
+      counterPert: 2, // 20 "-"
+      errorClamp: 5 // 100 "-"
+    }
+    // note: in McDougle, 10% of baseline and initialPert trials are error_clamp trials
+    
+    // compute total number of trials and initialize counter (for progress bar)
+    var totTrials = trials.practice+trials.baseline+trials.initialPert+trials.counterPert+trials.errorClamp;
+    var trialCount = 0;
+    
     // A baseline trial
     var trial_baseline = {
       type: 'vmr',
       perturbation_angle: 0,
-      // cursor_radius: 6,
-      // home_radius: 10,
-      // target_radius: 12,
-      // home_location: [500,500],
-      // target_location: [500,700],
-      // cursor_color: 'red',
-      // home_color: 'white',
-      // target_color: 'white',
-      // background_color: 'black'
       on_finish: function() {
         trialCount += 1;
         jsPsych.setProgressBar(trialCount/totTrials);
@@ -171,10 +162,10 @@
       }
     }
     
+    
     /* Create BLOCK objects */
     var practice_block = {
       timeline: [trial_baseline],
-      //timeline_variables: [],
       repetitions: trials.practice
     }
     
@@ -186,35 +177,23 @@
     var initialPert_block = {
       timeline: [trial_initialPert],
       repetitions: trials.initialPert
+      //randomize_order: false
     }
-    //randomize_order: false
     
     var counterPert_block = {
       timeline: [trial_counterPert],
       repetitions: trials.counterPert
     }
     
-    
     var errorClamp_block = {
       timeline: [trial_errorClamp],
       repetitions: trials.errorClamp
     }
     
+    
     /* Create Firebase SAVE functions and block object */
-    // This function creates a random 5-character ID string
-    // We might want to use Worker ID instead (ask them to input at beginning)
-    // That way we could also check if this worker has already done task
-    function makeid(){
-      var text = "";
-      var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-      for( var i=0; i < 5; i++ )
-          text += possible.charAt(Math.floor(Math.random() * possible.length));
-      return text;
-    }
-    var code = makeid();
-  
     function saveToFirebase(code, filedata){
-      var ref = firebase.database().ref(code).set(filedata, function(error) {
+      var ref = firebase.database().ref('experiments/' + expName + '/' + workerId).set(filedata, function(error) {
         if (error) {
           console.log('ERROR: Failed to save data to firebase.');
         }
@@ -304,6 +283,29 @@
       if((tem= ua.match(/version\/(\d+)/i))!= null) 
         M.splice(1, 1, tem[1]); 
       return { 'browser': M[0], 'version': M[1] }; 
+    }
+    
+    // Create five-character random string
+    function makeid(){
+      var text = "";
+      var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      for( var i=0; i < 5; i++ )
+          text += possible.charAt(Math.floor(Math.random() * possible.length));
+      return text;
+    }
+    
+    function createWorkerNode(workerId) {
+      firebase.database().ref('workers/' + workerId).set({
+        //username: name,
+      });
+    }
+    
+    function createWorkerDataNode(workerId) {
+      firebase.database().ref('experiments/' +  expName + '/' + workerId).set({
+        username: name,
+        email: email,
+        profile_picture : imageUrl
+      });
     }
     
     </script>
