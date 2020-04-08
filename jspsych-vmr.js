@@ -170,7 +170,6 @@ jsPsych.plugins.vmr = (function() {
     var centerX = canvasWidth / 2;
     var centerY = canvasHeight / 2;
 
-
 		//Set the canvas background color
 		canvas.style.backgroundColor = trial.background_color;
 
@@ -214,9 +213,6 @@ jsPsych.plugins.vmr = (function() {
       radius: trial.target_radius,
       colorHex: trial.target_color
     };
-    
-    console.log(home);
-    console.log(target);
 
     // initialize variables to be saved in every trial
     var data = {
@@ -267,6 +263,7 @@ jsPsych.plugins.vmr = (function() {
 
     var canvasHeaderText = '';
     var feedbackText = '';
+    var feedbackCol = 'white';
     
     // Initialize mouse event handler to get mouse x-/y-coordinates
     document.onmousemove = handleMouseMove; // set the mousemove event handler to be our function

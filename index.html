@@ -112,10 +112,10 @@
     
     // How many trials will you have of each type?
     var trials = { 
-      practice: 1, 
-      baseline: 1, // 100 in McDougle Paper
-      initialPert: 1, // 200 "-"
-      counterPert: 1, // 20 "-"
+      practice: 2, 
+      baseline: 2, // 100 in McDougle Paper
+      initialPert: 10, // 200 "-"
+      counterPert: 2, // 20 "-"
       errorClamp: 5 // 100 "-"
     }
     // note: in McDougle, 10% of baseline and initialPert trials are error_clamp trials
@@ -194,8 +194,8 @@
     
     
     /* Create Firebase SAVE functions and block object */
-    function saveToFirebase(code, filedata){
-      var ref = firebase.database().ref('experiments/' + expName + '/' + workerId).set(filedata, function(error) {
+    function saveToFirebase(filedata){
+      var ref = firebase.database().ref('experiments/' + expName + '/' + firebase.auth.uid()).set(filedata, function(error) {
         if (error) {
           console.log('ERROR: Failed to save data to firebase.');
         }
@@ -210,15 +210,21 @@
       on_start: function() {$('body').css('cursor', 'auto')}, // show cursor
       on_finish: function() {
         if (typeof(firebase)!=="undefined"){
-          saveToFirebase(code, jsPsych.data.get().values());
+          saveToFirebase(jsPsych.data.get().values());
         }
       }
+    }
+    
+    if (typeof(firebase)!=="undefined"){
+      confirmationCode = firebase.auth.uid();
+    }else{
+      confirmationCode = '10027wl';
     }
     
     var code_screen = {
       type: 'html-button-response',
       stimulus: '<h3>This is your code:</h3>' + "<br/>",
-      choices: ['<h2>9999999</h2>']
+      choices: ['<h2>' + confirmationCode  + '</h2>']
     }
     
     ////////////////////////////////////////////////
