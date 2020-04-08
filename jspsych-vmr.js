@@ -213,7 +213,8 @@ jsPsych.plugins["vmr"] = (function() {
       //velxArray: [],
       //velyArray: [],
       velArray: [],
-      timeArray: [], // time since go cue
+      trialTimeArray: [], // time since trial start
+      rawTimeArray: [], // array with raw time stamps
       stateArray: [],
       frameRate: [], // monitor refreshe interval (in ms)
       missTrial: false,
@@ -440,17 +441,16 @@ jsPsych.plugins["vmr"] = (function() {
       
 
       // Store frame-by-frame data
-      if (currentState>START && currentState<TRIALEND) {
+      if (currentState>SETUP && currentState<TRIALEND) {
         data.xArray.push(cursor.x);
         data.yArray.push(cursor.y);
         data.velArray.push(cursor.vel_sq);
-        data.timeArray.push(Math.round(100 * ((currentTimestamp - trialStartTime) + Number.EPSILON)) / 100); // save time stamps (rounded to 2 decimals; number.EPSILON avoids rounding errors)
+        data.trialTimeArray.push(Math.round(100 * ((currentTimestamp - trialStartTime) + Number.EPSILON)) / 100); // save time stamps (rounded to 2 decimals; number.EPSILON avoids rounding errors)
+        data.rawTimeArray.push(Math.round(100 * (currentTimestamp + Number.EPSILON)) / 100); // save time stamps (rounded to 2 decimals; number.EPSILON avoids rounding errors)
         data.stateArray.push(currentState);
-      }
-
-      if (frameID > 1) { // after first frame, get frame interval
         data.frameRate.push(Math.round(100 * ((currentTimestamp - previousTimestamp) + Number.EPSILON)) / 100); //Push the interval into the frameRate array (rounded to 2 decimals; number.EPSILON avoids rounding errors)
       }
+
 
       previousTimestamp = currentTimestamp; //Update previous time stamp 
       frameID += 1;
@@ -491,7 +491,8 @@ jsPsych.plugins["vmr"] = (function() {
         "cursorX": JSON.stringify(data.xArray), // Cursor x-coordinates, in the form of a JSON string
         "cursorY": JSON.stringify(data.yArray), // Cursor y-coordinates
         "cursorVel": JSON.stringify(data.velArray), // Cursor velocity
-        "TimeGo": JSON.stringify(data.timeArray), // Array of time stamps for each trajectory data point (time point since go cue)
+        "TrialTime": JSON.stringify(data.trialTimeArray), // Array of time stamps for each trajectory data point (time point since trial start)
+        "RawTime": JSON.stringify(data.rawTimeArray),// Raw time stamp
         "State": JSON.stringify(data.stateArray), // Array of states since go cue
         "frameTime": JSON.stringify(data.frameRate), // Array of frame times in this trial
         "nFrames": frameID, //data.frameRate.length, // Number of frames in this trial    
