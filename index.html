@@ -49,26 +49,28 @@
     // For: firebase.database().ref('experiments/' + expName + '/' workerId)
     var expName = 'VMR-SR';
     
-    // Sign in user anonymously
-    firebase.auth().signInAnonymously().catch(function(error) {
-      // Handle errors
-      var errorCode = error.code;
-      var errorMessage = error.message;
-      if (errorCode === 'auth/operation-not-allowed') {
-        alert('You must enable Anonymous auth in the Firebase Console.');
-      } else {
-        console.error(error);
-      }
-    });
-    
-    // Listener for change in user state
-		firebase.auth().onAuthStateChanged(function(user){
-		  if(user){
-		    var uid = user.uid;
-		  }else{
-		    console.log('The user is not signed in.');
-		  }
-		});
+    if (typeof(firebase) !== 'undefined'){
+      // Sign in user anonymously
+      firebase.auth().signInAnonymously().catch(function(error) {
+        // Handle errors
+        var errorCode = error.code;
+        var errorMessage = error.message;
+        if (errorCode === 'auth/operation-not-allowed') {
+          alert('You must enable Anonymous auth in the Firebase Console.');
+        } else {
+          console.error(error);
+        }
+      });
+      
+      // Listener for change in user state
+  		firebase.auth().onAuthStateChanged(function(user){
+  		  if(user){
+  		    var uid = user.uid;
+  		  }else{
+  		    console.log('The user is not signed in.');
+  		  }
+  		});
+    }
     
     ////////////////////////////////////////////////
     // 1. Create structure for experiment
@@ -110,11 +112,11 @@
     
     // How many trials will you have of each type?
     var trials = { 
-      practice: 2, 
-      baseline: 2, // 100 in McDougle Paper
-      initialPert: 10, // 200 "-"
-      counterPert: 2, // 20 "-"
-      errorClamp: 5 // 100 "-"
+      practice: 1, 
+      baseline: 1, // 100 in McDougle Paper
+      initialPert: 1, // 200 "-"
+      counterPert: 1, // 20 "-"
+      errorClamp: 1 // 100 "-"
     }
     // note: in McDougle, 10% of baseline and initialPert trials are error_clamp trials
     
@@ -207,7 +209,9 @@
       choices: ['<h2>Get Code</h2>'],
       on_start: function() {$('body').css('cursor', 'auto')}, // show cursor
       on_finish: function() {
-        saveToFirebase(code, jsPsych.data.get().values());
+        if (typeof(firebase)!=="undefined"){
+          saveToFirebase(code, jsPsych.data.get().values());
+        }
       }
     }
     
