@@ -101,6 +101,12 @@ jsPsych.plugins["vmr"] = (function() {
         pretty_name: "MT time-out",
         default: 2000,
         description: "Deadline for movement execution (in ms)"
+      },
+      timeout_return:{
+        type: jsPsych.plugins.parameterType.INT, 
+        pretty_name: "Return time-out",
+        default: 5000,
+        description: "Deadline to return to home position/initiate next trial (in ms)"
       },    
       background_color: {
         type: jsPsych.plugins.parameterType.STRING,
@@ -207,7 +213,8 @@ jsPsych.plugins["vmr"] = (function() {
       //velxArray: [],
       //velyArray: [],
       velArray: [],
-      timeArray: [],
+      timeArray: [], // time since go cue
+      stateArray: [],
       frameRate: [], // monitor refreshe interval (in ms)
       missTrial: false,
       missTrialMsg: '' // miss trial message
@@ -216,7 +223,6 @@ jsPsych.plugins["vmr"] = (function() {
 
     var trialStartTime;
     var stateStartTime;
-    var goStartTime;
     var currentTimestamp;
     var previousTimestamp;
     var frameRequest;
@@ -226,10 +232,12 @@ jsPsych.plugins["vmr"] = (function() {
     // States
     var SETUP = 0;
     var START = 1;
-    var GO = 2;
-    var MOVING = 3;
-    var FEEDBACK = 4;
-    var TRIALEND = 5;
+    var DELAY = 2;
+    var GO = 3;
+    var MOVING = 4;
+    var FEEDBACK = 5;
+    var RETURN = 6; // return movement
+    var TRIALEND = 7;
 
     var currentState = SETUP;
 
@@ -261,10 +269,9 @@ jsPsych.plugins["vmr"] = (function() {
 
       currentTimestamp = performance.now(); //Variable to hold current timestamp when frame was initiated
 
-      // if first frame
-      if (trialStartTime === undefined) { 
-        trialStartTime = currentTimestamp;
-        previousTimestamp = currentTimestamp; // for first frame, previous time stamp = current time
+      // for first frame, previous time stamp = current time
+      if (previousTimestamp === undefined) { 
+        previousTimestamp = currentTimestamp;
       }
 
       //canvas.dispatchEvent(new Event('mousemove'));
@@ -272,7 +279,11 @@ jsPsych.plugins["vmr"] = (function() {
       cursor.vel_sq = Math.pow(cursor.velx,2)+Math.pow(cursor.vely,2);
       
       if (trial.error_clamp) {
-        cursor.xDisplayed = target.x;
+        if (currentState < RETURN) {
+          cursor.xDisplayed = target.x;
+        } else { // during return movement, recalibrate according to last cursor location (to do)
+          cursor.xDisplayed = cursor.x;
+        }
       }else{
         cursor.xDisplayed = home.x+((cursor.x-home.x)*Math.cos(perturbationAngle)-(cursor.y-home.y)*Math.sin(perturbationAngle));
       }
@@ -292,18 +303,32 @@ jsPsych.plugins["vmr"] = (function() {
     			stateStartTime = performance.now(); // ALWAYS RESET THE STATE TIMER WHEN ADVANCING STATE
     			currentState = START;
     			break;
-
-    		case START:
-    			if (cursor.atHome){
-    				canvasHeaderText = 'Get set...'
+    			
+    		case START: 
+    		  if (cursor.atHome && cursor.vel_sq<3){ // speed in px/frame 
+    				canvasHeaderText = '' 
+	    			stateStartTime = performance.now(); // ALWAYS RESET WHEN ADVANCING
+	    			trialStartTime = stateStartTime; 
+	    			currentState=DELAY;
+    		  }else{
+    				canvasHeaderText = 'Move the cursor inside the gray dot.'
+    			}
+    			break;
+    			
+    		case DELAY: // check that participant stays in home position during delay period
+    			if (cursor.atHome){ // cursor still at home?
+    				canvasHeaderText = '' // state only lasts 250 ms
     				if ((currentTimestamp-stateStartTime)>trial.onset_delay){
 	    				stateStartTime = performance.now(); // ALWAYS RESET WHEN ADVANCING
-	    				goStartTime = stateStartTime; // using this later on to save time points since go cue
+	    				trialStartTime = stateStartTime; 
 	    				currentState=GO;
 	    			}
     			}else{
-    				canvasHeaderText = 'Move the cursor inside the gray dot.'
-    				stateStartTime = performance.now(); // reset the state timer
+    				canvasHeaderText = ''
+    				data.missTrial = true;
+            data.missTrialMsg = 'too_early';
+            stateStartTime = performance.now(); // RESET
+					  currentState=FEEDBACK;
     			}
     			break;
 
@@ -315,7 +340,7 @@ jsPsych.plugins["vmr"] = (function() {
 					currentState=MOVING;
 				} else if ((performance.now() - stateStartTime) > trial.timeout_RT) { // if no response initiated, check if RT time-out
           data.missTrial = true;
-          data.missTrialMsg = 'RTtimeout';
+          data.missTrialMsg = 'RT_timeout';
           stateStartTime = performance.now(); // RESET
 					currentState=FEEDBACK;
         }
@@ -329,37 +354,56 @@ jsPsych.plugins["vmr"] = (function() {
 					currentState=FEEDBACK;
 				} else if ((performance.now() - stateStartTime) > trial.timeout_MT) { // if no target hit, check if MT time-out
           data.missTrial = true;
-          data.missTrialMsg = 'MTtimeout';
+          data.missTrialMsg = 'MT_timeout';
           stateStartTime = performance.now(); // RESET
 					currentState=FEEDBACK;
         }
 				break;
 
-			case FEEDBACK: // This should only run one time!
+			case FEEDBACK: 
 				canvasHeaderText = ''; //'Target acquired! (+1)'
 
+        // Miss trials
 			  if (data.missTrial){
-			    if (data.missTrialMsg == 'RTtimeout') {
+			    if (data.missTrialMsg == 'too_early') {
+			      feedbackText = 'Too early!';
+			    } else if (data.missTrialMsg == 'RT_timeout') {
 			      feedbackText = 'Too slow!';
-			    } else if (data.missTrialMsg == 'MTtimeout') {
+			    } else if (data.missTrialMsg == 'MT_timeout') {
 			      feedbackText = 'Move faster!';
+			    } else if (data.missTrialMsg == 'return_timeout') {
+			      feedbackText = 'Return to home position!';
 			    }
 			    feedbackCol = 'red';
 			    if ((performance.now() - stateStartTime) > trial.errorMsg_dur) {
 				    stateStartTime = performance.now(); // RESET
-				    currentState = TRIALEND;
+				    currentState = RETURN;
           }
 
+        // Successful trials
 			  } else {
 			    feedbackText = 'Target acquired! (+1)'; 
 			    feedbackCol = 'white';
 				  if ((performance.now() - stateStartTime) > trial.feedback_dur) {
 				    stateStartTime = performance.now(); // RESET
-				    currentState = TRIALEND;
+				    currentState = RETURN;
           }
 			  }
 				break;
-
+      
+      case RETURN: 
+        canvasHeaderText = 'Move the cursor inside the gray dot.';
+        if (cursor.atHome){
+          stateStartTime = performance.now(); // RESET
+				  currentState = TRIALEND;
+				} else if ((performance.now() - stateStartTime) > trial.timeout_return) { // if not back home, check if return time-out
+				  data.missTrial = true;
+				  data.missTrialMsg = 'return_timeout';
+				  stateStartTime = performance.now(); // RESET
+				  currentState = FEEDBACK;
+        }
+        break;
+        
 			case TRIALEND:
         canvasHeaderText = ' ';
         cancelAnimationFrame(frameRequest);
@@ -369,36 +413,39 @@ jsPsych.plugins["vmr"] = (function() {
       }
       
       //*---------- Draw -----------*//
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight); // Clear previous drawing within canvas
-      draw_text(canvasHeaderText,[centerX,30],14,'white'); // Write the header text
+      if (currentState<TRIALEND) {// || currentState==RETURN){ // If we're not done
 
-      if (currentState<TRIALEND){ // If we're not done
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight); // Clear previous drawing within canvas
+        draw_text(canvasHeaderText,[centerX,30],16,'white'); // Write the header text
+
         // Draw home position
         draw_circle(home.x,home.y,home.radius,home.colorHex,1);
-
-        // Draw target position
-        if (currentState>=GO){ // If we've waited at home long enough
-          draw_circle(target.x,target.y,target.radius,target.colorHex,1);
-        }
 	      
         // Draw cursor
         if (cursor.x>0 && cursor.y > 0){ // only draw if within screen (and after mouse movement initiation, otherwise cursor is shown at [0,0])
           draw_circle(cursor.xDisplayed,cursor.yDisplayed,cursor.radius,cursor.colorHex,1);
         }
         
+        // Draw target position
+        if (currentState>=GO && currentState!==RETURN  && data.missTrialMsg!=='return_timeout'){ // don't show target if return error
+          draw_circle(target.x,target.y,target.radius,target.colorHex,1);
+        }
+      
+      
         // Show feedback in center of screen
-        if (currentState==FEEDBACK){
+        if (currentState==FEEDBACK || (currentState==RETURN && data.missTrialMsg=='return_timeout')){
           draw_text(feedbackText,[centerX,centerY],20,feedbackCol); // Write the header text
         }
       }
-    
+      
 
       // Store frame-by-frame data
-      if ((currentState==MOVING || currentState==GO) && goStartTime !== undefined){
+      if (currentState>START && currentState<TRIALEND) {
         data.xArray.push(cursor.x);
         data.yArray.push(cursor.y);
         data.velArray.push(cursor.vel_sq);
-        data.timeArray.push(Math.round(100 * ((currentTimestamp - goStartTime) + Number.EPSILON)) / 100); // save time stamps (rounded to 2 decimals; number.EPSILON avoids rounding errors)
+        data.timeArray.push(Math.round(100 * ((currentTimestamp - trialStartTime) + Number.EPSILON)) / 100); // save time stamps (rounded to 2 decimals; number.EPSILON avoids rounding errors)
+        data.stateArray.push(currentState);
       }
 
       if (frameID > 1) { // after first frame, get frame interval
@@ -445,6 +492,7 @@ jsPsych.plugins["vmr"] = (function() {
         "cursorY": JSON.stringify(data.yArray), // Cursor y-coordinates
         "cursorVel": JSON.stringify(data.velArray), // Cursor velocity
         "TimeGo": JSON.stringify(data.timeArray), // Array of time stamps for each trajectory data point (time point since go cue)
+        "State": JSON.stringify(data.stateArray), // Array of states since go cue
         "frameTime": JSON.stringify(data.frameRate), // Array of frame times in this trial
         "nFrames": frameID, //data.frameRate.length, // Number of frames in this trial    
         "avgFR": data.frameRate.reduce((total,current) => total + current)/frameID, // Average frame rate of trial  
@@ -452,19 +500,19 @@ jsPsych.plugins["vmr"] = (function() {
         "missTrialMsg": data.missTrialMsg // miss trial message/type
       }
       
-      //Remove the canvas as the child of the display_element element
+      ////Remove the canvas as the child of the display_element element
       display_element.innerHTML='';
       
-      //Restore the settings to JsPsych defaults
-      body.style.margin = originalMargin;
-      body.style.padding = originalPadding;
-      body.style.backgroundColor = originalBackgroundColor;
+      ////Restore the settings to JsPsych defaults
+      //body.style.margin = originalMargin;
+      //body.style.padding = originalPadding;
+      //body.style.backgroundColor = originalBackgroundColor;
       
-      body.style.cursor = 'none'; // still hiding cursor
+      //body.style.cursor = 'none'; // still hiding cursor
 
       //End this trial and move on to the next trial
       jsPsych.finishTrial(trial_data); // this function automatically writes all the trial_data
-      
+
     } //End of end_trial
 
   };
