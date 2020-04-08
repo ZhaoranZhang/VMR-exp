@@ -122,52 +122,65 @@
     
     // compute total number of trials and initialize counter (for progress bar)
     var totTrials = trials.practice+trials.baseline+trials.initialPert+trials.counterPert+trials.errorClamp;
-    var trialCount = 0;
+    var TrialCount = 1; // counts trials across all blocks (used for progress bar)
+    
+      
+    // initialize last mouse position variable (will be updated to track last position in previous trial)
+    // Will be used for re-calibration (WORK IN PROGRESS)
+    var lastMousePos = {
+      x: undefined,
+      y: undefined,
+    }
+    
+    
+    // A practice trial
+    var trial_practice = {
+      type: 'vmr',
+      perturbation_angle: 0,
+      data: { TrialType: 'Practice' }, // data that is saved for every type of that trial
+      on_finish: function(data) { getPreviousTrial(data); } // get some data from previous trial to update output/next trial
+    }
     
     // A baseline trial
     var trial_baseline = {
       type: 'vmr',
       perturbation_angle: 0,
-      on_finish: function() {
-        trialCount += 1;
-        jsPsych.setProgressBar(trialCount/totTrials);
-      }
+      mouse_offset: mouseOffset,
+      data: { TrialType: 'Baseline' }, // data that is saved for every type of that trial
+      on_finish: function(data) { getPreviousTrial(data); } // get some data from previous trial to update output/next trial
     }
     
     // A perturbation trial
     var trial_initialPert = {
       type: 'vmr',
       perturbation_angle: -15,
-      on_finish: function() {
-        trialCount += 1;
-        jsPsych.setProgressBar(trialCount/totTrials);
-      }
+      mouse_offset: mouseOffset,
+      data: { TrialType: 'initialPert' }, // data that is saved for every type of that trial
+      on_finish: function(data) { getPreviousTrial(data); } // get some data from previous trial to update output/next trial
     }
     
     // A counter-perturbation trial
     var trial_counterPert = {
       type: 'vmr',
       perturbation_angle: +15,
-      on_finish: function() {
-        trialCount += 1;
-        jsPsych.setProgressBar(trialCount/totTrials);
-      }
+      mouse_offset: mouseOffset,
+      data: { TrialType: 'counterPert' }, // data that is saved for every type of that trial
+      on_finish: function(data) { getPreviousTrial(data); } // get some data from previous trial to update output/next trial
     }
     
     // An error-clamp trial
     var trial_errorClamp = {
       type: 'vmr',
       error_clamp: true,
-      on_finish: function() {
-        trialCount += 1;
-        jsPsych.setProgressBar(trialCount/totTrials);
-      }
+      mouse_offset: mouseOffset,
+      data: { TrialType: 'errorClamp' }, // data that is saved for every type of that trial
+      on_finish: function(data) { getPreviousTrial(data); } // get some data from previous trial to update output/next trial
     }
     
     
     /* Create BLOCK objects */
     var practice_block = {
-      timeline: [trial_baseline],
+      timeline: [trial_practice],
       repetitions: trials.practice
     }
     
@@ -318,6 +331,19 @@
       });
     }
     
+    /* Function getting data from last trial to update global variables */
+    function getPreviousTrial(data) { // pass data recorded in previous trial to access last mouse position & add global output variables
+        data.TrialNumber = TrialCount; // add trial number to output
+        jsPsych.setProgressBar(TrialCount/totTrials);
+        TrialCount += 1;
+        
+        // get last mouse position from previous trial to update mouseOffset for current trial
+        lastMousePos.x = data.cursorX(-1)[0]; 
+        lastMousePos.y = data.cursorY(-1)[0]; 
+        
+        //mouseOffset.x = 
+     }
+      
     </script>
   </body>
 </html>
