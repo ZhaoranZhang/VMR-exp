@@ -31,13 +31,13 @@ jsPsych.plugins.vmr = (function() {
       home_radius: {
         type: jsPsych.plugins.parameterType.INT,
         pretty_name: "Home radius",
-        default: 10,
+        default: 12,
         description: "Home radius in pixels"
       },
       target_radius: {
         pretty_name: "Target radius",
         type: jsPsych.plugins.parameterType.INT, 
-        default: 12,
+        default: 15,
         description: "Target radius in pixels"
       },
       home_location: {
@@ -313,8 +313,8 @@ jsPsych.plugins.vmr = (function() {
       // Compute distances to home and target
       cursor.distanceToHome = Math.sqrt(Math.pow(cursor.xDisplayed-home.x,2)+Math.pow(cursor.yDisplayed-home.y,2));
       cursor.distanceToTarget = Math.sqrt(Math.pow(cursor.xDisplayed-target.x,2)+Math.pow(cursor.yDisplayed-target.y,2));
-      cursor.atHome = cursor.distanceToHome < (home.radius-cursor.radius); // cursor fully inside home circle?
-      cursor.atTarget = cursor.distanceToTarget < (target.radius-cursor.radius); // cursor fully inside home circle?
+      cursor.atHome = cursor.distanceToHome < (home.radius-cursor.radius) && cursor.vel_sq<20; // cursor fully inside home circle?
+      cursor.atTarget = cursor.distanceToTarget < (target.radius-cursor.radius)  && cursor.vel_sq<20; // cursor fully inside home circle?
 
 
       // Store frame-by-frame data
@@ -346,7 +346,7 @@ jsPsych.plugins.vmr = (function() {
     			break;
     			
     		case State.START: 
-    		  if (cursor.atHome && cursor.vel_sq===0){ // speed in px/frame 
+    		  if (cursor.atHome){ // speed in px/frame 
     				canvasHeaderText = '';
 	    			stateStartTime = performance.now(); // ALWAYS RESET WHEN ADVANCING
 	    			State.Current=State.DELAY;
@@ -432,7 +432,7 @@ jsPsych.plugins.vmr = (function() {
       
       case State.RETURN: 
         canvasHeaderText = 'Move the cursor inside the gray dot.';
-        if (cursor.atHome && cursor.vel_sq===0){
+        if (cursor.atHome){
           stateStartTime = performance.now(); // RESET
 				  State.Current = State.TRIALEND;
 				} else if ((performance.now() - stateStartTime) > trial.timeout_return) { // if not back home, check if return time-out
