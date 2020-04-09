@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+  <head>
+
+    <script src="jspsych.js"></script>
+    <script src="jspsych-survey-text.js"></script>
+    <script src="jspsych-survey-multi-choice.js"></script>
+    <script src="jspsych-survey-multi-select.js" ></script>
+    <script src="jspsych-instructions.js"></script>
+    <link rel='stylesheet' type='text/css' href='jspsych_myStyle.css'>
+  </head>
+  <body></body>
+  <script>
+    var timeline = [];
+  var instructions = {
+    type: 'instructions',
+    pages: ['<h3>Welcome to the experiment.</h3>'+
+            '<p>Here is the consent form</p>'],
+    show_clickable_nav: true,
+    show_page_number: true
+  }
+  var age = {
+    type: 'survey-text',
+    questions: [
+        {
+            prompt: 'Please input your MTurk worker ID:', 
+            columns: 10, 
+            required: true, 
+            name: 'WorkerID'
+        },
+        {
+            prompt: 'How old are you?', 
+            columns: 3, 
+            required: true, 
+            name: 'Age'
+        }
+    ],
+  };
+  var questions = {
+    type: 'survey-multi-choice',
+    questions: [
+        {
+            prompt: "What is your gender?", 
+            options: ["Female", "Male", "Other", "Prefer not to tell"], 
+            required: true, 
+            horizontal: false,
+        }, 
+        {
+            prompt: "Which hand you use to control the mouse/touch pad?", 
+            options: ["Left", "Right"], 
+            required: true, 
+            horizontal: false
+        }
+    ],
+  };
+  var agree = {
+        type: 'survey-multi-select',
+        questions: [
+          {
+            prompt: " ", 
+            options: ["I read the insturctions and agree to start the experiment."], 
+            horizontal: true,
+            required: true,
+            name: 'agree'
+          }       
+        ]
+    };
+//  var Survey = [instructions,age,questions,agree];
+ timeline.push(instructions);
+ timeline.push(age);
+ timeline.push(questions);
+ timeline.push(agree);
+
+  jsPsych.init({
+    timeline: timeline,
+    on_finish: function() { jsPsych.data.displayData(); }
+  });
+
+  </script>
+</html>
