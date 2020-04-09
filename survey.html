@@ -9,13 +9,20 @@
     <script src="jspsych-instructions.js"></script>
     <link rel='stylesheet' type='text/css' href='jspsych_myStyle.css'>
   </head>
-  <body></body>
+  <body>
+
+  </body>
   <script>
     var timeline = [];
   var instructions = {
     type: 'instructions',
     pages: ['<h3>Welcome to the experiment.</h3>'+
-            '<p>Here is the consent form</p>'],
+            '<p>Here is the consent form</p>'+
+            '<p>Click here to download the consent form<p>'+
+            '<a href="consent.pdf" target="_black">'+
+            '<button type="submit">Download consent form</button>'+
+            '</a>'
+        ],
     show_clickable_nav: true,
     show_page_number: true
   }
