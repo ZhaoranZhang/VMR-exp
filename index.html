@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+  
+  <head>
+    <title>Motor Study</title>
+    
+    <!-- *** CSS *** -->
+    <link rel='stylesheet' type='text/css' href='jspsych_myStyle.css'>
+    
+    <!-- *** JQUERY *** -->
+    <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
+    
+    <!-- *** JSPSYCH *** -->
+    <script src=jspsych.js></script>
+    <script src=jspsych-html-button-response.js></script>
+    <script src=jspsych-vmr.js></script>
+    <script src=jspsych-fullscreen.js></script>
+    
+    <!-- *** FIREBASE *** -->
+    <!-- The core Firebase JS SDK is always required and must be listed first -->
+    <script src="/__/firebase/7.13.2/firebase-app.js"></script>
+    <!-- Add SDKs for Firebase products that you want to use
+         https://firebase.google.com/docs/web/setup#available-libraries -->
+    <script src="/__/firebase/7.13.2/firebase-analytics.js"></script> <!-- Analytics -->
+    <script src="/__/firebase/7.13.2/firebase-database.js"></script> <!-- Realtime Database -->
+    <!-- Configure Realtime Database config -->
+    <script>
+      // Set the configuration for your app
+      var config = {
+        //apiKey: "apiKey",
+        //authDomain: "projectId.firebaseapp.com",
+        databaseURL: "https://motorlearn-cb21c.firebaseio.com/",
+        //storageBucket: "bucket.appspot.com"
+      };
+    </script>
+    <!-- Initialize Firebase -->
+    <script src="/__/firebase/init.js"></script>
+    
+  </head>
+  
+  <!--THE EXPERIMENT -->
+  <body>
+    <script>
+    
+    ////////////////////////////////////////////////
+    // 0. Preliminaries
+    ////////////////////////////////////////////////
+    
+    // For: firebase.database().ref('experiments/' + expName + '/' workerId)
+    var expName = 'VMR-SR';
+    
+    if (typeof(firebase) !== 'undefined'){
+      // Sign in user anonymously
+      firebase.auth().signInAnonymously().catch(function(error) {
+        // Handle errors
+        var errorCode = error.code;
+        var errorMessage = error.message;
+        if (errorCode === 'auth/operation-not-allowed') {
+          alert('You must enable Anonymous auth in the Firebase Console.');
+        } else {
+          console.error(error);
+        }
+      });
+      
+      // Listener for change in user state
+  		firebase.auth().onAuthStateChanged(function(user){
+  		  if(user){
+  		    var uid = user.uid;
+  		  }else{
+  		    console.log('The user is not signed in.');
+  		  }
+  		});
+    }
+    
+    ////////////////////////////////////////////////
+    // 1. Create structure for experiment
+    ////////////////////////////////////////////////
+    
+    /* Create empty TIMELINE */
+    var timeline = [];
+    
+
+    /* Create SCREENMODE objects */
+    var screenmode = {
+      type: 'fullscreen',
+      fullscreen_mode: true
+    }
+        
+            
+    /* Create INSTRUCTIONS objects */
+    var instructions1 = {
+        type: 'html-button-response',
+        stimulus: '<h3>Welcome to the experiment</h3>' + "<br/>" +
+        "<p>Move the cursor from the home position to the target.<p>" + "<br/>" + 
+        "<p>Let's start with some practice.<p>" + "<br/>",
+        choices: ['<h2>Start Practice</h2>'],
+        on_start: function() {$('body').css('cursor', 'auto')}, // show cursor before button click
+        on_finish: function() {$('body').css('cursor', 'none')} // hide cursor after button click
+    };
+    
+    var instructions2 = {
+        type: 'html-button-response',
+        stimulus: '<h3>End of practice. Well done!</h3>' + "<br/>" +
+        "<p>Click the button to start the experiment.<p>" + "<br/>",
+        choices: ['<h2>Start Experiment</h2>'],
+        on_start: function() {$('body').css('cursor', 'auto')}, // show cursor before button click
+        on_finish: function() {$('body').css('cursor', 'none')} // hide cursor after button click
+      };
+    
+    
+    /* Create TRIAL objects */
+    
+    // How many trials will you have of each type?
+    var trials = { 
+      practice: 1, 
+      baseline: 1, // 100 in McDougle Paper
+      initialPert: 1, // 200 "-"
+      counterPert: 1, // 20 "-"
+      errorClamp: 1 // 100 "-"
+    }
+    // note: in McDougle, 10% of baseline and initialPert trials are error_clamp trials
+    
+    // compute total number of trials and initialize counter (for progress bar)
+    var totTrials = trials.practice+trials.baseline+trials.initialPert+trials.counterPert+trials.errorClamp;
+    var TrialCount = 1; // counts trials across all blocks (used for progress bar)
+    
+      
+    // initialize last mouse position variable (will be updated to track last position in previous trial)
+    // Will be used for re-calibration (WORK IN PROGRESS)
+    var lastMousePos = {
+      x: undefined,
+      y: undefined,
+    }
+    
+    
+    // A practice trial
+    var trial_practice = {
+      type: 'vmr',
+      perturbation_angle: 0,
+      data: { TrialType: 'Practice' }, // data that is saved for every type of that trial
+      on_finish: function(data) { getPreviousTrial(data); } // get some data from previous trial to update output/next trial
+    }
+    
+    // A baseline trial
+    var trial_baseline = {
+      type: 'vmr',
+      perturbation_angle: 0,
+      data: { TrialType: 'Baseline' }, // data that is saved for every type of that trial
+      on_finish: function(data) { getPreviousTrial(data); } // get some data from previous trial to update output/next trial
+    }
+    
+    // A perturbation trial
+    var trial_initialPert = {
+      type: 'vmr',
+      perturbation_angle: -15,
+      data: { TrialType: 'initialPert' }, // data that is saved for every type of that trial
+      on_finish: function(data) { getPreviousTrial(data); } // get some data from previous trial to update output/next trial
+    }
+    
+    // A counter-perturbation trial
+    var trial_counterPert = {
+      type: 'vmr',
+      perturbation_angle: +15,
+      data: { TrialType: 'counterPert' }, // data that is saved for every type of that trial
+      on_finish: function(data) { getPreviousTrial(data); } // get some data from previous trial to update output/next trial
+    }
+    
+    // An error-clamp trial
+    var trial_errorClamp = {
+      type: 'vmr',
+      error_clamp: true,
+      data: { TrialType: 'errorClamp' }, // data that is saved for every type of that trial
+      on_finish: function(data) { getPreviousTrial(data); } // get some data from previous trial to update output/next trial
+    }
+    
+    
+    /* Create BLOCK objects */
+    var practice_block = {
+      timeline: [trial_practice],
+      repetitions: trials.practice
+    }
+    
+    var baseline_block = {
+      timeline: [trial_baseline],
+      repetitions: trials.baseline
+    }
+    
+    var initialPert_block = {
+      timeline: [trial_initialPert],
+      repetitions: trials.initialPert
+      //randomize_order: false
+    }
+    
+    var counterPert_block = {
+      timeline: [trial_counterPert],
+      repetitions: trials.counterPert
+    }
+    
+    var errorClamp_block = {
+      timeline: [trial_errorClamp],
+      repetitions: trials.errorClamp
+    }
+    
+    
+    /* Create Firebase SAVE functions and block object */
+    function saveToFirebase(filedata){
+      var ref = firebase.database().ref('experiments/' + expName + '/' + firebase.auth.uid()).set(filedata, function(error) {
+        if (error) {
+          console.log('ERROR: Failed to save data to firebase.');
+        }
+      });
+    }
+    
+    var save_screen = {
+      type: 'html-button-response',
+      stimulus: '<h3>The experiment is over. Thank you!</h3>' + "<br/>" +
+      "<p>Click the button to receive validation code.<p>" + "<br/>",
+      choices: ['<h2>Get Code</h2>'],
+      on_start: function() {$('body').css('cursor', 'auto')}, // show cursor
+      on_finish: function() {
+        if (typeof(firebase)!=="undefined"){
+          saveToFirebase(jsPsych.data.get().values());
+        }
+      }
+    }
+    
+    if (typeof(firebase)!=="undefined"){
+      confirmationCode = firebase.auth.uid();
+    }else{
+      confirmationCode = '10027wl';
+    }
+    
+    var code_screen = {
+      type: 'html-button-response',
+      stimulus: '<h3>This is your code:</h3>' + "<br/>",
+      choices: ['<h2>' + confirmationCode  + '</h2>']
+    }
+    
+    ////////////////////////////////////////////////
+    // 2. Push everything to timeline
+    ////////////////////////////////////////////////
+    timeline.push(screenmode);
+    timeline.push(instructions1);
+    timeline.push(practice_block);
+    timeline.push(instructions2);
+    
+    timeline.push(baseline_block);
+    timeline.push(initialPert_block);
+    timeline.push(counterPert_block);
+    timeline.push(errorClamp_block);
+    
+    timeline.push(save_screen);
+    timeline.push(code_screen);
+    
+    ////////////////////////////////////////////////
+    // 3. Start the experiment
+    ////////////////////////////////////////////////
+    var browserInfo = getBrowserInfo();
+    if (browserInfo.browser !== 'Chrome' && browserInfo.browser !== 'Firefox') {
+      var wrong_browser = {
+    			type: 'html-button-response',
+    			stimulus: '<p>This experiment only has support for Google Chrome or Mozilla Firefox.</p>'
+    			+ '<p>Please reopen the experiment in one of these browsers.</p>',
+    			choices: ['Close window']}
+    	jsPsych.init({ 
+    	  timeline: [wrong_browser],
+    	  on_finish: function(){window.close();}
+    	});
+    }else{ // only run experiment if in correct browser
+      jsPsych.init({
+        timeline: timeline,
+        'show_progress_bar': true,
+        'auto_update_progress_bar': false,
+        'message_progress_bar': 'Completion Progress<br/>',
+        //on_start: function(){},
+        default_iti: 0
+      });
+    }
+    
+    
+    
+    
+    
+    ////////////////////////////////////////////////
+    // Extra functions
+    ////////////////////////////////////////////////
+    
+    /* Function checking browser */
+    function getBrowserInfo() { 
+      var ua = navigator.userAgent, tem, 
+      M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || []; 
+      if(/trident/i.test(M[1])) { 
+        tem=  /\brv[ :]+(\d+)/g.exec(ua) || []; 
+        return 'IE '+(tem[1] || ''); 
+      } 
+      if(M[1]=== 'Chrome') { 
+        tem= ua.match(/\b(OPR|Edge)\/(\d+)/); 
+        if(tem!= null) 
+        return tem.slice(1).join(' ').replace('OPR', 'Opera'); 
+      } 
+      M = M[2]? [M[1], M[2]]: [navigator.appName, navigator.appVersion, '-?']; 
+      if((tem= ua.match(/version\/(\d+)/i))!= null) 
+        M.splice(1, 1, tem[1]); 
+      return { 'browser': M[0], 'version': M[1] }; 
+    }
+    
+    // Create five-character random string
+    function makeid(){
+      var text = "";
+      var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      for( var i=0; i < 5; i++ )
+          text += possible.charAt(Math.floor(Math.random() * possible.length));
+      return text;
+    }
+    
+    function createWorkerNode(workerId) {
+      firebase.database().ref('workers/' + workerId).set({
+        //username: name,
+      });
+    }
+    
+    function createWorkerDataNode(workerId) {
+      firebase.database().ref('experiments/' +  expName + '/' + workerId).set({
+        username: name,
+        email: email,
+        profile_picture : imageUrl
+      });
+    }
+    
+    /* Function getting data from last trial to update global variables */
+    function getPreviousTrial(data) { // pass data recorded in previous trial to access last mouse position & add global output variables
+        data.TrialNumber = TrialCount; // add trial number to output
+        jsPsych.setProgressBar(TrialCount/totTrials);
+        TrialCount += 1;
+        
+        // get last mouse position from previous trial to update mouseOffset for current trial
+        lastMousePos.x = data.cursorX(-1)[0]; 
+        lastMousePos.y = data.cursorY(-1)[0]; 
+        
+        //mouseOffset.x = 
+     }
+      
+    </script>
+  </body>
+</html>
