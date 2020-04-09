@@ -145,7 +145,6 @@
     var trial_baseline = {
       type: 'vmr',
       perturbation_angle: 0,
-      mouse_offset: mouseOffset,
       data: { TrialType: 'Baseline' }, // data that is saved for every type of that trial
       on_finish: function(data) { getPreviousTrial(data); } // get some data from previous trial to update output/next trial
     }
@@ -154,7 +153,6 @@
     var trial_initialPert = {
       type: 'vmr',
       perturbation_angle: -15,
-      mouse_offset: mouseOffset,
       data: { TrialType: 'initialPert' }, // data that is saved for every type of that trial
       on_finish: function(data) { getPreviousTrial(data); } // get some data from previous trial to update output/next trial
     }
@@ -163,7 +161,6 @@
     var trial_counterPert = {
       type: 'vmr',
       perturbation_angle: +15,
-      mouse_offset: mouseOffset,
       data: { TrialType: 'counterPert' }, // data that is saved for every type of that trial
       on_finish: function(data) { getPreviousTrial(data); } // get some data from previous trial to update output/next trial
     }
@@ -172,7 +169,6 @@
     var trial_errorClamp = {
       type: 'vmr',
       error_clamp: true,
-      mouse_offset: mouseOffset,
       data: { TrialType: 'errorClamp' }, // data that is saved for every type of that trial
       on_finish: function(data) { getPreviousTrial(data); } // get some data from previous trial to update output/next trial
     }
